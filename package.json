@@ -12,12 +12,25 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "sprout.helloWorld",
-        "title": "Hello World"
-      }
-    ]
+    "commands": [],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "icon": "icons.png",
+          "id": "myLeftPanel",
+          "title": "Task List"
+        }
+      ]
+    },
+    "views": {
+      "myLeftPanel": [
+        {
+          "icon": "icons.png",
+          "id": "leftView",
+          "name": "Task List"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

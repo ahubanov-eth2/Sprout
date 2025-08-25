@@ -1,25 +1,67 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { LineProvider, LineItem } from './lineProvider'
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+let currentPanel: vscode.WebviewPanel | undefined;
+
 export function activate(context: vscode.ExtensionContext) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "sprout" is now active!');
+	const leftProvider = new LineProvider();
+  vscode.window.registerTreeDataProvider('leftView', leftProvider);
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('sprout.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Sprout!');
-	});
+  const disposable = vscode.commands.registerCommand('sprout.lineClicked', (item: LineItem) => {
+    // vscode.window.showInformationMessage(`You clicked: ${item.label}`);
+  
+    if (currentPanel) {
+        // Panel already exists: just reveal it and update HTML
+        currentPanel.reveal(vscode.ViewColumn.Two, true);
+        updatePanelContent(currentPanel, item);
+    } else {
+        currentPanel = vscode.window.createWebviewPanel(
+          'myRightPanel',
+          'My Right Panel',
+          { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
+          { enableScripts: true }
+        );
 
-	context.subscriptions.push(disposable);
+        updatePanelContent(currentPanel, item);
+
+        // Reset when user closes the panel
+        currentPanel.onDidDispose(() => {
+          currentPanel = undefined;
+        }, null, context.subscriptions);
+    }
+  });
+
+  context.subscriptions.push(disposable);
+}
+
+function updatePanelContent(panel: vscode.WebviewPanel, item: LineItem) {
+  panel.title = `${item.label}`;
+  panel.webview.html = `
+    <!DOCTYPE html>
+    <html>
+      <body style="font-family: sans-serif; padding: 1em;">
+        <h2>${item.label}</h2>
+        <p>Description of ${item.label}</p>
+
+        <details>
+          <summary>Step 1</summary>
+          <p>This is what you need to do to complete step 1.</p>
+        </details>
+
+        <details>
+          <summary>Step 2</summary>
+          <p>This is what you need to do to complete step 2.</p>
+        </details>
+
+        <details>
+          <summary>Step 3</summary>
+          <p>This is what you need to do to complete step 3.</p>
+        </details>
+
+      </body>
+    </html>
+  `;
 }
 
 // This method is called when your extension is deactivated
