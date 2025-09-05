@@ -1,18 +1,16 @@
 import * as vscode from 'vscode';
-import { LineProvider, LineItem } from './lineProvider'
+import { TaskProvider, Section } from './taskProvider'
 
 let currentPanel: vscode.WebviewPanel | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
 
-	const leftProvider = new LineProvider();
+	const leftProvider = new TaskProvider();
   vscode.window.registerTreeDataProvider('leftView', leftProvider);
 
-  const disposable = vscode.commands.registerCommand('sprout.lineClicked', (item: LineItem) => {
-    // vscode.window.showInformationMessage(`You clicked: ${item.label}`);
+  const disposable = vscode.commands.registerCommand('sprout.lineClicked', (item: Section) => {
   
     if (currentPanel) {
-        // Panel already exists: just reveal it and update HTML
         currentPanel.reveal(vscode.ViewColumn.Two, true);
         updatePanelContent(currentPanel, item);
     } else {
@@ -25,7 +23,6 @@ export function activate(context: vscode.ExtensionContext) {
 
         updatePanelContent(currentPanel, item);
 
-        // Reset when user closes the panel
         currentPanel.onDidDispose(() => {
           currentPanel = undefined;
         }, null, context.subscriptions);
@@ -35,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable);
 }
 
-function updatePanelContent(panel: vscode.WebviewPanel, item: LineItem) {
+function updatePanelContent(panel: vscode.WebviewPanel, item: Section) {
   panel.title = `${item.label}`;
   panel.webview.html = `
     <!DOCTYPE html>
@@ -161,5 +158,4 @@ function updatePanelContent(panel: vscode.WebviewPanel, item: LineItem) {
   `;
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}
