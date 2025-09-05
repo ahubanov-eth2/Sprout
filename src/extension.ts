@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { TaskProvider, Section } from './taskProvider'
+import * as path from 'path';
+import * as fs from 'fs';
 
 let currentPanel: vscode.WebviewPanel | undefined;
 
@@ -12,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
   
     if (currentPanel) {
         currentPanel.reveal(vscode.ViewColumn.Two, true);
-        updatePanelContent(currentPanel, item);
+        updatePanelContent(currentPanel, item, context.extensionPath);
     } else {
         currentPanel = vscode.window.createWebviewPanel(
           'myRightPanel',
@@ -21,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
           { enableScripts: true }
         );
 
-        updatePanelContent(currentPanel, item);
+        updatePanelContent(currentPanel, item, context.extensionPath);
 
         currentPanel.onDidDispose(() => {
           currentPanel = undefined;
@@ -32,130 +34,21 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable);
 }
 
-function updatePanelContent(panel: vscode.WebviewPanel, item: Section) {
+function getWebviewContent(extensionPath: string, item: any): string {
+    const htmlPath = path.join(extensionPath, 'src', 'rightPanelWebView.html');
+    let htmlContent = fs.readFileSync(htmlPath, 'utf8');
+
+    htmlContent = htmlContent.replace('{{TITLE}}', item.label);
+
+    const description = `Description of <strong>${item.label}</strong>.`;
+    htmlContent = htmlContent.replace('{{DESCRIPTION}}', description)
+
+    return htmlContent;
+}
+
+function updatePanelContent(panel: vscode.WebviewPanel, item: Section, extensionPath: string) {
   panel.title = `${item.label}`;
-  panel.webview.html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: inter;
-            padding: 1em;
-            font-size: 24px;
-          }
-
-          .dropdown {
-            margin-bottom: 0.5em;
-          }
-
-          .dropdown-header {
-            cursor: pointer;
-            font-size: 1.2rem;
-            font-weight: 500;
-            color: grey;
-            display: flex;
-            align-items: center;
-            user-select: none;
-          }
-
-          .dropdown-header::before {
-            content: "▶";
-            display: inline-block;
-            margin-right: 1em;
-            color: grey;
-            transition: transform 0.3s ease;
-          }
-
-          .dropdown.open > .dropdown-header::before {
-            transform: rotate(90deg);
-          }
-
-          .dropdown-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease;
-            color: grey;
-            font-size: 1rem;
-            padding-left: 2em; 
-          }
-        </style>
-      </head>
-      <body style="font-family: sans-serif; padding: 1em;">
-        <h2>${item.label}</h2>
-        <p>Description of ${item.label}</p>
-
-        <div class="dropdown">
-          <div class="dropdown-header">Step 1</div>
-          <div class="dropdown-content">
-            <p>This is what you need to do to complete step 1.</p>
-
-            <div class="dropdown">
-              <div class="dropdown-header">Hint</div>
-              <div class="dropdown-content">
-                <p>This is a hint for completing step 1.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dropdown">
-          <div class="dropdown-header">Step 2</div>
-          <div class="dropdown-content">
-            <p>This is what you need to do to complete step 2.</p>
-
-            <div class="dropdown">
-              <div class="dropdown-header">Hint</div>
-              <div class="dropdown-content">
-                <p>This is a hint for completing step 2.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dropdown">
-          <div class="dropdown-header">Step 3</div>
-          <div class="dropdown-content">
-            <p>This is what you need to do to complete step 3.</p>
-
-            <div class="dropdown">
-              <div class="dropdown-header">Hint</div>
-              <div class="dropdown-content">
-                <p>This is a hint for completing step 3.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <script>
-          document.querySelectorAll('.dropdown-header').forEach(header => {
-            header.addEventListener('click', () => {
-              const drop = header.parentElement;
-              const content = drop.querySelector('.dropdown-content');
-
-              if (drop.classList.contains('open')) {
-                content.style.maxHeight = content.scrollHeight + "px"; // set to current
-                requestAnimationFrame(() => {
-                  content.style.maxHeight = "0px";
-                });
-                drop.classList.remove('open');
-              } else {
-                drop.classList.add('open');
-                content.style.maxHeight = content.scrollHeight + "px";
-                content.addEventListener('transitionend', function clear() {
-                  if (drop.classList.contains('open')) {
-                    content.style.maxHeight = "none";
-                  }
-                  content.removeEventListener('transitionend', clear);
-                });
-              }
-            });
-          });
-        </script>
-
-      </body>
-    </html>
-  `;
+  panel.webview.html = getWebviewContent(extensionPath, item);
 }
 
 export function deactivate() {}
