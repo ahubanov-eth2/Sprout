@@ -42,79 +42,118 @@
         font-size: 1rem;
         padding-left: 2em; 
         }
+
+        .navigation-buttons button {
+            background-color: #0e4b63;
+            color: white;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .navigation-buttons button:hover {
+            background-color: #1f4ea7;
+        }
+
     </style>
     </head>
-    <body style="font-family: sans-serif; padding: 1em;">
-    <h2>{{TITLE}}</h2>
-    <p>{{DESCRIPTION}}</p>
-
-    <div class="dropdown">
-        <div class="dropdown-header">Step 1</div>
-        <div class="dropdown-content">
-        <p>This is what you need to do to complete step 1.</p>
+    <body data-item-label="{{LABEL}}" style="font-family: sans-serif; padding: 1em;">
+        <h2>{{TITLE}}</h2>
+        <p>{{DESCRIPTION}}</p>
 
         <div class="dropdown">
-            <div class="dropdown-header">Hint</div>
+            <div class="dropdown-header">Step 1</div>
             <div class="dropdown-content">
-            <p>This is a hint for completing step 1.</p>
+            <p>This is what you need to do to complete step 1.</p>
+
+            <div class="dropdown">
+                <div class="dropdown-header">Hint</div>
+                <div class="dropdown-content">
+                <p>This is a hint for completing step 1.</p>
+                </div>
+            </div>
             </div>
         </div>
-        </div>
-    </div>
-
-    <div class="dropdown">
-        <div class="dropdown-header">Step 2</div>
-        <div class="dropdown-content">
-        <p>This is what you need to do to complete step 2.</p>
 
         <div class="dropdown">
-            <div class="dropdown-header">Hint</div>
+            <div class="dropdown-header">Step 2</div>
             <div class="dropdown-content">
-            <p>This is a hint for completing step 2.</p>
+            <p>This is what you need to do to complete step 2.</p>
+
+            <div class="dropdown">
+                <div class="dropdown-header">Hint</div>
+                <div class="dropdown-content">
+                <p>This is a hint for completing step 2.</p>
+                </div>
+            </div>
             </div>
         </div>
-        </div>
-    </div>
-
-    <div class="dropdown">
-        <div class="dropdown-header">Step 3</div>
-        <div class="dropdown-content">
-        <p>This is what you need to do to complete step 3.</p>
 
         <div class="dropdown">
-            <div class="dropdown-header">Hint</div>
+            <div class="dropdown-header">Step 3</div>
             <div class="dropdown-content">
-            <p>This is a hint for completing step 3.</p>
+            <p>This is what you need to do to complete step 3.</p>
+
+            <div class="dropdown">
+                <div class="dropdown-header">Hint</div>
+                <div class="dropdown-content">
+                <p>This is a hint for completing step 3.</p>
+                </div>
+            </div>
             </div>
         </div>
+
+        <div class="navigation-buttons">
+            <button id="prevButton">Previous</button>
+            <button id="nextButton">Next</button>
         </div>
-    </div>
 
-    <script>
-        document.querySelectorAll('.dropdown-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const drop = header.parentElement;
-            const content = drop.querySelector('.dropdown-content');
+        <script>
+            document.querySelectorAll('.dropdown-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const drop = header.parentElement;
+                    const content = drop.querySelector('.dropdown-content');
 
-            if (drop.classList.contains('open')) {
-            content.style.maxHeight = content.scrollHeight + "px";
-            requestAnimationFrame(() => {
-                content.style.maxHeight = "0px";
+                    if (drop.classList.contains('open')) {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                    requestAnimationFrame(() => {
+                        content.style.maxHeight = "0px";
+                    });
+                    drop.classList.remove('open');
+                    } else {
+                    drop.classList.add('open');
+                    content.style.maxHeight = content.scrollHeight + "px";
+                    content.addEventListener('transitionend', function clear() {
+                        if (drop.classList.contains('open')) {
+                        content.style.maxHeight = "none";
+                        }
+                        content.removeEventListener('transitionend', clear);
+                    });
+                    }
+                });
             });
-            drop.classList.remove('open');
-            } else {
-            drop.classList.add('open');
-            content.style.maxHeight = content.scrollHeight + "px";
-            content.addEventListener('transitionend', function clear() {
-                if (drop.classList.contains('open')) {
-                content.style.maxHeight = "none";
-                }
-                content.removeEventListener('transitionend', clear);
+
+            const vscode = acquireVsCodeApi();
+            const currentItemLabel = document.body.dataset.itemLabel;
+
+            document.getElementById('nextButton').addEventListener('click', () => {
+                vscode.postMessage({
+                    command: 'nextItem',
+                    label: currentItemLabel
+                });
             });
-            }
-        });
-        });
-    </script>
+
+            document.getElementById('prevButton').addEventListener('click', () => {
+                vscode.postMessage({
+                    command: 'prevItem',
+                    label: currentItemLabel
+                });
+            });
+        </script>
 
     </body>
 </html>

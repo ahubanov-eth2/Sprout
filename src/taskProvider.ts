@@ -33,6 +33,16 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
     ),
   ];
 
+  private leaves: Section[] = [
+      new Section("Welcome!", undefined, vscode.TreeItemCollapsibleState.None, "book"),
+      new Section("Setup", undefined, vscode.TreeItemCollapsibleState.None, "code"),
+      new Section("Background 1", undefined, vscode.TreeItemCollapsibleState.None, "book"),
+      new Section("Background 2", undefined, vscode.TreeItemCollapsibleState.None, "book"),
+      new Section("Step 1", undefined, vscode.TreeItemCollapsibleState.None, "code"),
+      new Section("Step 2", undefined, vscode.TreeItemCollapsibleState.None, "code"),
+      new Section("Debrief", undefined, vscode.TreeItemCollapsibleState.None, "book")
+  ];
+
   private taskRoot : Section = new Section(
     "Title of task",
     this.sections,
@@ -53,6 +63,35 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
     {
       return [this.taskRoot];
     }
+  }
+
+  public findLeafByLabel(label: string): Section | undefined {
+        const allLeaves = this.leaves;
+        return allLeaves.find(leaf => leaf.label === label);
+    }
+
+  public findNextLeaf(currentItem: Section): Section | undefined {
+    
+    const allLeaves = this.leaves;
+    const currentIndex = allLeaves.findIndex(leaf => leaf.label === currentItem.label);
+
+    if (currentIndex === -1 || currentIndex >= allLeaves.length - 1) {
+      return undefined;
+    }
+
+    return allLeaves[currentIndex + 1];
+  }
+
+  public findPrevLeaf(currentItem: Section): Section | undefined {
+    
+    const allLeaves = this.leaves;
+    const currentIndex = allLeaves.findIndex(leaf => leaf.label === currentItem.label);
+
+    if (currentIndex <= 0) {
+      return undefined;
+    }
+
+    return allLeaves[currentIndex - 1];
   }
 }
 
