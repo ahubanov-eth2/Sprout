@@ -13,10 +13,12 @@ export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand('sprout.lineClicked', (item: Section) => {
     
     const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
+    const parent = leftProvider.findParent(leftProvider.getRoot(), item);
+    const parentLabel = (parent !== undefined) ? parent.label : ""
 
     if (currentPanel) {
         currentPanel.reveal(vscode.ViewColumn.Two, true);
-        updatePanelContent(currentPanel, item, context, siblings, currentIndex);
+        updatePanelContent(currentPanel, item, context, siblings, currentIndex, parentLabel);
     } else {
         currentPanel = vscode.window.createWebviewPanel(
           'myRightPanel',
@@ -40,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
             context.subscriptions
         );
         
-        updatePanelContent(currentPanel, item, context, siblings, currentIndex);
+        updatePanelContent(currentPanel, item, context, siblings, currentIndex, parentLabel);
 
         currentPanel.onDidDispose(() => {
           currentPanel = undefined;
@@ -80,11 +82,14 @@ function getWebviewContent(
   extensionPath: string, 
   item: any, 
   siblings: Section[], 
-  currentIndex: number
+  currentIndex: number,
+  parentLabel: string
 ): string 
 {
     const htmlPath = path.join(extensionPath, 'src', 'rightPanelWebView.html');
     let htmlContent = fs.readFileSync(htmlPath, 'utf8');
+
+    htmlContent = htmlContent.replace('{{PARENT_TITLE}}', parentLabel);
 
     let paginationHtml = '';
     if (siblings.length > 0) {
@@ -112,10 +117,11 @@ function updatePanelContent(
   extensionContext: 
   vscode.ExtensionContext, 
   siblings: Section[], 
-  currentIndex: number
+  currentIndex: number,
+  parentLabel: string
 ) {
   panel.title = `${item.label}`;
-  panel.webview.html = getWebviewContent(extensionContext.extensionPath, item, siblings, currentIndex); 
+  panel.webview.html = getWebviewContent(extensionContext.extensionPath, item, siblings, currentIndex, parentLabel); 
 }
 
 export function deactivate() {}

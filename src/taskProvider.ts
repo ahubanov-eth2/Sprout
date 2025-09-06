@@ -67,7 +67,11 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
     }
   }
 
-  private findParent(node: Section, target: Section): Section | undefined {
+  getRoot(): Section {
+    return this.taskRoot;
+  }
+
+  public findParent(node: Section, target: Section): Section | undefined {
     if (!node || !node.children) return undefined;
 
     if (node.children.some(child => child.label === target.label)) {
