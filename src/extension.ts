@@ -11,9 +11,12 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.window.registerTreeDataProvider('leftView', leftProvider);
 
   const disposable = vscode.commands.registerCommand('sprout.lineClicked', (item: Section) => {
+    
+    const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
+
     if (currentPanel) {
         currentPanel.reveal(vscode.ViewColumn.Two, true);
-        updatePanelContent(currentPanel, item, context);
+        updatePanelContent(currentPanel, item, context, siblings, currentIndex);
     } else {
         currentPanel = vscode.window.createWebviewPanel(
           'myRightPanel',
@@ -37,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
             context.subscriptions
         );
         
-        updatePanelContent(currentPanel, item, context);
+        updatePanelContent(currentPanel, item, context, siblings, currentIndex);
 
         currentPanel.onDidDispose(() => {
           currentPanel = undefined;
@@ -73,10 +76,27 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(nextItemDisposable, prevItemDisposable);
 }
 
-function getWebviewContent(extensionPath: string, item: any): string {
+function getWebviewContent(
+  extensionPath: string, 
+  item: any, 
+  siblings: Section[], 
+  currentIndex: number
+): string 
+{
     const htmlPath = path.join(extensionPath, 'src', 'rightPanelWebView.html');
     let htmlContent = fs.readFileSync(htmlPath, 'utf8');
 
+    let paginationHtml = '';
+    if (siblings.length > 0) {
+        paginationHtml = `<div class="pagination-container">`;
+        for (let i = 0; i < siblings.length; i++) {
+            const className = i === currentIndex ? 'step-box active' : 'step-box';
+            paginationHtml += `<div class="${className}">${i + 1}</div>`;
+        }
+        paginationHtml += `</div>`;
+    }
+
+    htmlContent = htmlContent.replace('{{PAGINATION}}', paginationHtml);
     htmlContent = htmlContent.replace('{{TITLE}}', item.label);
 
     const description = `Description of <strong>${item.label}</strong>.`;
@@ -86,9 +106,16 @@ function getWebviewContent(extensionPath: string, item: any): string {
     return htmlContent;
 }
 
-function updatePanelContent(panel: vscode.WebviewPanel, item: Section, extensionContext: vscode.ExtensionContext) {
+function updatePanelContent(
+  panel: vscode.WebviewPanel, 
+  item: Section, 
+  extensionContext: 
+  vscode.ExtensionContext, 
+  siblings: Section[], 
+  currentIndex: number
+) {
   panel.title = `${item.label}`;
-  panel.webview.html = getWebviewContent(extensionContext.extensionPath, item); 
+  panel.webview.html = getWebviewContent(extensionContext.extensionPath, item, siblings, currentIndex); 
 }
 
 export function deactivate() {}

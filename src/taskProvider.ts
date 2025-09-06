@@ -20,13 +20,14 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
       [
         new Section("Step 1", undefined, vscode.TreeItemCollapsibleState.None, "code"),
         new Section("Step 2", undefined, vscode.TreeItemCollapsibleState.None, "code"),
+        new Section("Step 3", undefined, vscode.TreeItemCollapsibleState.None, "code"),
       ],  
       vscode.TreeItemCollapsibleState.Collapsed,
       "file-directory"
     ),
     new Section("Debrief",
       [
-        new Section("Debrief", undefined, vscode.TreeItemCollapsibleState.None, "book")
+        new Section("Debrief Content", undefined, vscode.TreeItemCollapsibleState.None, "book")
       ],  
       vscode.TreeItemCollapsibleState.Collapsed,
       "file-directory"
@@ -40,7 +41,8 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
       new Section("Background 2", undefined, vscode.TreeItemCollapsibleState.None, "book"),
       new Section("Step 1", undefined, vscode.TreeItemCollapsibleState.None, "code"),
       new Section("Step 2", undefined, vscode.TreeItemCollapsibleState.None, "code"),
-      new Section("Debrief", undefined, vscode.TreeItemCollapsibleState.None, "book")
+      new Section("Step 3", undefined, vscode.TreeItemCollapsibleState.None, "code"),
+      new Section("Debrief Content", undefined, vscode.TreeItemCollapsibleState.None, "book")
   ];
 
   private taskRoot : Section = new Section(
@@ -65,10 +67,36 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
     }
   }
 
-  public findLeafByLabel(label: string): Section | undefined {
-        const allLeaves = this.leaves;
-        return allLeaves.find(leaf => leaf.label === label);
+  private findParent(node: Section, target: Section): Section | undefined {
+    if (!node || !node.children) return undefined;
+
+    if (node.children.some(child => child.label === target.label)) {
+      return node;
     }
+
+    for (const child of node.children) {
+      const foundParent = this.findParent(child, target);
+      if (foundParent) {
+        return foundParent;
+      }
+    }
+    return undefined;
+  }
+
+  public findLeafByLabel(label: string): Section | undefined {
+      const allLeaves = this.leaves;
+      return allLeaves.find(leaf => leaf.label === label);
+  }
+
+  public getLeafSiblings(currentItem: Section): { siblings: Section[], currentIndex: number } {
+    const parent = this.findParent(this.taskRoot, currentItem);
+    if (!parent || !parent.children) {
+      return { siblings: [], currentIndex: -1 };
+    }
+    const siblings = parent.children.filter(child => !child.children || child.children.length === 0);
+    const currentIndex = siblings.findIndex(s => s.label === currentItem.label);
+    return { siblings, currentIndex };
+  }
 
   public findNextLeaf(currentItem: Section): Section | undefined {
     

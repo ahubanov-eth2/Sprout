@@ -59,9 +59,32 @@
             background-color: #1f4ea7;
         }
 
+        .pagination-container {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 1em;
+        }
+
+        .step-box {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #242d33;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .step-box.active {
+            background-color: #007acc;
+        }
+
     </style>
     </head>
     <body data-item-label="{{LABEL}}" style="font-family: sans-serif; padding: 1em;">
+        {{PAGINATION}}
         <h2>{{TITLE}}</h2>
         <p>{{DESCRIPTION}}</p>
 
