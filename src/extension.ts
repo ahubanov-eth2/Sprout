@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
-import { TaskProvider, Section } from './taskProvider'
+import { TaskProvider, Section } from './taskProvider.js'
 import * as path from 'path';
 import * as fs from 'fs';
+import { marked } from 'marked';
 
 let currentPanel: vscode.WebviewPanel | undefined;
 
@@ -103,8 +104,26 @@ function getWebviewContent(
 
     htmlContent = htmlContent.replace('{{PAGINATION}}', paginationHtml);
     htmlContent = htmlContent.replace('{{TITLE}}', item.label);
+    htmlContent = htmlContent.replace('{{LABEL}}', item.label);
 
-    const description = `Description of <strong>${item.label}</strong>.`;
+    const basePath = path.join(extensionPath)
+    let description = '';
+    if (item.filePath)
+    {
+      const markdownPath = path.join(basePath, item.filePath);
+      try {
+          const markdownContent = fs.readFileSync(markdownPath, 'utf8');
+          description = marked.parse(markdownContent) as string;
+      } catch (error) {
+          description = `Failed to load content for ${item.label}.`;
+          console.error(error);
+      } 
+    }
+    else
+    {
+      description = `Description of <strong>${item.label}</strong>.`;
+    }
+
     htmlContent = htmlContent.replace('{{DESCRIPTION}}', description);
     htmlContent = htmlContent.replace('{{LABEL}}', item.label);
 

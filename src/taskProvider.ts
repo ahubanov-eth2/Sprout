@@ -1,33 +1,38 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 export class TaskProvider implements vscode.TreeDataProvider<Section> {
   private sections : Section[] = [
     new Section("Introduction",
       [
-        new Section("Welcome!", undefined, vscode.TreeItemCollapsibleState.None, "book"),
-        new Section("Setup", undefined, vscode.TreeItemCollapsibleState.None, "code"),
+        new Section("Welcome!", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'introduction', 'welcome', 'task.md')),
+        new Section("Setup", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'introduction', 'first_step', 'task.md')),
       ],  vscode.TreeItemCollapsibleState.Collapsed,
       "file-directory"
     ),
     new Section("Theoretical Background",
       [
-        new Section("Background 1", undefined, vscode.TreeItemCollapsibleState.None, "book"),
-        new Section("Background 2", undefined, vscode.TreeItemCollapsibleState.None, "book"),
+        new Section("Background 1", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task1', 'task.md')),
+        new Section("Background 2", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task2', 'task.md')),
+        new Section("Background 3", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task3', 'task.md')),
       ],  vscode.TreeItemCollapsibleState.Collapsed,
       "file-directory"
     ),
     new Section("Step-by-step Coding",
       [
-        new Section("Step 1", undefined, vscode.TreeItemCollapsibleState.None, "code"),
-        new Section("Step 2", undefined, vscode.TreeItemCollapsibleState.None, "code"),
-        new Section("Step 3", undefined, vscode.TreeItemCollapsibleState.None, "code"),
+        new Section("Step 1", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step1', 'task.md')),
+        new Section("Step 1 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol1', 'task.md')),
+        new Section("Step 2", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step2', 'task.md')),
+        new Section("Step 2 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol2', 'task.md')),
+        new Section("Step 3", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step3', 'task.md')),
+        new Section("Step 3 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol3', 'task.md')),
       ],  
       vscode.TreeItemCollapsibleState.Collapsed,
       "file-directory"
     ),
     new Section("Debrief",
       [
-        new Section("Debrief Content", undefined, vscode.TreeItemCollapsibleState.None, "book")
+        new Section("Debrief Content", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'debrief', 'task1', 'task.md'))
       ],  
       vscode.TreeItemCollapsibleState.Collapsed,
       "file-directory"
@@ -35,14 +40,18 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
   ];
 
   private leaves: Section[] = [
-      new Section("Welcome!", undefined, vscode.TreeItemCollapsibleState.None, "book"),
-      new Section("Setup", undefined, vscode.TreeItemCollapsibleState.None, "code"),
-      new Section("Background 1", undefined, vscode.TreeItemCollapsibleState.None, "book"),
-      new Section("Background 2", undefined, vscode.TreeItemCollapsibleState.None, "book"),
-      new Section("Step 1", undefined, vscode.TreeItemCollapsibleState.None, "code"),
-      new Section("Step 2", undefined, vscode.TreeItemCollapsibleState.None, "code"),
-      new Section("Step 3", undefined, vscode.TreeItemCollapsibleState.None, "code"),
-      new Section("Debrief Content", undefined, vscode.TreeItemCollapsibleState.None, "book")
+      new Section("Welcome!", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'introduction', 'welcome', 'task.md')),
+      new Section("Setup", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'introduction', 'first_step', 'task.md')),
+      new Section("Background 1", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task1', 'task.md')),
+      new Section("Background 2", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task2', 'task.md')),
+      new Section("Background 3", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task3', 'task.md')),
+      new Section("Step 1", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step1', 'task.md')),
+      new Section("Step 1 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol1', 'task.md')),
+      new Section("Step 2", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step2', 'task.md')),
+      new Section("Step 2 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol2', 'task.md')),
+      new Section("Step 3", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step3', 'task.md')),
+      new Section("Step 3 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol3', 'task.md')),
+      new Section("Debrief Content", undefined, vscode.TreeItemCollapsibleState.None, path.join('courses', 'task1', 'debrief', 'task1', 'task.md'))
   ];
 
   private taskRoot : Section = new Section(
@@ -132,7 +141,8 @@ export class Section extends vscode.TreeItem {
     public readonly label: string,
     public readonly children: Section[] | undefined,
     collapsibleState: vscode.TreeItemCollapsibleState,
-    iconName: string
+    iconName: string,
+    public readonly filePath? : string
   ) {
     super(label, collapsibleState);
     this.iconPath = new vscode.ThemeIcon(iconName);

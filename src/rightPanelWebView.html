@@ -3,44 +3,50 @@
     <head>
     <style>
         body {
-        font-family: inter;
-        padding: 1em;
-        font-size: 24px;
+            font-family: inter;
+            padding: 1em;
+            font-size: 20px;
         }
 
         .dropdown {
-        margin-bottom: 0.5em;
+            margin-bottom: 0.5em;
         }
 
         .dropdown-header {
-        cursor: pointer;
-        font-size: 1.2rem;
-        font-weight: 500;
-        color: grey;
-        display: flex;
-        align-items: center;
-        user-select: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: grey;
+            display: flex;
+            align-items: center;
+            user-select: none;
         }
 
         .dropdown-header::before {
-        content: "▶";
-        display: inline-block;
-        margin-right: 1em;
-        color: grey;
-        transition: transform 0.3s ease;
+            content: "▶";
+            display: inline-block;
+            margin-right: 1em;
+            color: grey;
+            transition: transform 0.3s ease;
         }
 
         .dropdown.open > .dropdown-header::before {
-        transform: rotate(90deg);
+            transform: rotate(90deg);
         }
 
         .dropdown-content {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.5s ease;
-        color: grey;
-        font-size: 1rem;
-        padding-left: 2em; 
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+            color: grey;
+            font-size: 1rem;
+            padding-left: 2em; 
+            padding-top: 0.75em;
+        }
+
+        .dropdown-content li {
+            margin-bottom: 0.5em;
+            font-size: 1.1rem;
         }
 
         .navigation-buttons button {
@@ -89,13 +95,37 @@
         <h2>{{TITLE}}</h2>
         <p>{{DESCRIPTION}}</p>
 
-        <div class="dropdown">
-            <div class="dropdown-header">Hint</div>
-            <div class="dropdown-content">
-            <p>This is a hint for completing the task.</p>
-            </div>
-        </div>
-        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const hintElements = document.querySelectorAll('.hint');
+
+                hintElements.forEach(hint => {
+                    const dropdown = document.createElement('div');
+                    dropdown.className = 'dropdown';
+
+                    const dropdownHeader = document.createElement('div');
+                    dropdownHeader.className = 'dropdown-header';
+                    dropdownHeader.textContent = hint.getAttribute('title') || 'Hint';
+
+                    const dropdownContent = document.createElement('div');
+                    dropdownContent.className = 'dropdown-content';
+                    
+                    while (hint.firstChild) {
+                        dropdownContent.appendChild(hint.firstChild);
+                    }
+
+                    dropdown.appendChild(dropdownHeader);
+                    dropdown.appendChild(dropdownContent);
+
+                    hint.parentNode.replaceChild(dropdown, hint);
+
+                    dropdownHeader.addEventListener('click', () => {
+                        const isOpen = dropdown.classList.toggle('open');
+                        dropdownContent.style.maxHeight = isOpen ? `${dropdownContent.scrollHeight}px` : '0';
+                    });
+                });
+            });
+        </script>
 
         <div class="navigation-buttons">
             <button id="prevButton">Previous</button>
