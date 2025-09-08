@@ -1,65 +1,80 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as yaml from 'js-yaml';
+import * as fs from 'fs';
 
 export class TaskProvider implements vscode.TreeDataProvider<Section> {
-  private sections : Section[] = [
-    new Section("Introduction",
-      [
-        new Section("Welcome!", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'introduction', 'welcome', 'task.md')),
-        new Section("Setup", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'introduction', 'first_step', 'task.md')),
-      ],  vscode.TreeItemCollapsibleState.Collapsed,
-      "file-directory"
-    ),
-    new Section("Theoretical Background",
-      [
-        new Section("Background 1", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task1', 'task.md')),
-        new Section("Background 2", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task2', 'task.md')),
-        new Section("Background 3", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task3', 'task.md')),
-      ],  vscode.TreeItemCollapsibleState.Collapsed,
-      "file-directory"
-    ),
-    new Section("Step-by-step Coding",
-      [
-        new Section("Step 1", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step1', 'task.md')),
-        new Section("Step 1 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol1', 'task.md')),
-        new Section("Step 2", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step2', 'task.md')),
-        new Section("Step 2 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol2', 'task.md')),
-        new Section("Step 3", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step3', 'task.md')),
-        new Section("Step 3 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol3', 'task.md')),
-      ],  
-      vscode.TreeItemCollapsibleState.Collapsed,
-      "file-directory"
-    ),
-    new Section("Debrief",
-      [
-        new Section("Debrief Content", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'debrief', 'task1', 'task.md'))
-      ],  
-      vscode.TreeItemCollapsibleState.Collapsed,
-      "file-directory"
-    ),
-  ];
+  private taskRoot: Section | undefined;
+  private readonly extensionPath: string;
 
-  private leaves: Section[] = [
-      new Section("Welcome!", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'introduction', 'welcome', 'task.md')),
-      new Section("Setup", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'introduction', 'first_step', 'task.md')),
-      new Section("Background 1", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task1', 'task.md')),
-      new Section("Background 2", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task2', 'task.md')),
-      new Section("Background 3", undefined, vscode.TreeItemCollapsibleState.None, "book", path.join('courses', 'task1', 'theory', 'task3', 'task.md')),
-      new Section("Step 1", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step1', 'task.md')),
-      new Section("Step 1 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol1', 'task.md')),
-      new Section("Step 2", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step2', 'task.md')),
-      new Section("Step 2 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol2', 'task.md')),
-      new Section("Step 3", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'step3', 'task.md')),
-      new Section("Step 3 Sol", undefined, vscode.TreeItemCollapsibleState.None, "code", path.join('courses', 'task1', 'coding', 'sol3', 'task.md')),
-      new Section("Debrief Content", undefined, vscode.TreeItemCollapsibleState.None, path.join('courses', 'task1', 'debrief', 'task1', 'task.md'))
-  ];
+  constructor(context: vscode.ExtensionContext) {
+    this.extensionPath = context.extensionPath;
+    this.loadData();
+  }
 
-  private taskRoot : Section = new Section(
-    "Title of task",
-    this.sections,
-    vscode.TreeItemCollapsibleState.Collapsed,
-    "repo"
-  );
+  private async loadData() {
+    const coursePath = path.join(this.extensionPath, 'courses', 'task1');
+    
+    const rootMetaPath = path.join(coursePath, 'course-info.yaml');
+    const rootMetaContent = fs.readFileSync(rootMetaPath, 'utf8');
+    const rootData = yaml.load(rootMetaContent) as any;
+
+    const children = await Promise.all(
+        rootData.content.map((childDir: string) => this.loadSection(path.join(coursePath, childDir)))
+    );
+
+    this.taskRoot = new Section(
+      rootData.title,
+      children,
+      vscode.TreeItemCollapsibleState.Collapsed,
+      "repo"
+    );
+  }
+
+  private async loadSection(sectionPath: string): Promise<Section> {
+    const lessonInfoPath = path.join(sectionPath, 'lesson-info.yaml');
+    const taskInfoPath = path.join(sectionPath, 'task-info.yaml');
+
+    let metaData: any;
+    let children: Section[] | undefined;
+    let collapsibleState = vscode.TreeItemCollapsibleState.None;
+
+    if (fs.existsSync(lessonInfoPath)) {
+        
+        const lessonInfoContent = fs.readFileSync(lessonInfoPath, 'utf8');
+        metaData = yaml.load(lessonInfoContent) as any;
+        
+        children = await Promise.all(
+            metaData.content.map((childDir: string) => this.loadSection(path.join(sectionPath, childDir)))
+        );
+        collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+    } else if (fs.existsSync(taskInfoPath)) {
+        
+        const taskInfoContent = fs.readFileSync(taskInfoPath, 'utf8');
+        metaData = yaml.load(taskInfoContent) as any;
+
+        return new Section(
+          metaData.custom_name,
+          children,
+          collapsibleState,
+          "book",
+          path.join(sectionPath, "task.md"),
+          metaData.children ? undefined : sectionPath
+        );
+
+    } else {
+        throw new Error(`YAML info file not found for section at: ${sectionPath}`);
+    }
+
+    return new Section(
+      metaData.custom_name,
+      children,
+      collapsibleState,
+      "file-directory",
+      metaData.file,
+      metaData.children ? undefined : sectionPath
+    );
+  }
 
   getTreeItem(element: Section): vscode.TreeItem {
     return element;
@@ -72,12 +87,12 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
     } 
     else 
     {
-      return [this.taskRoot];
+      return [this.taskRoot as Section];
     }
   }
 
   getRoot(): Section {
-    return this.taskRoot;
+    return this.taskRoot as Section;
   }
 
   public findParent(node: Section, target: Section): Section | undefined {
@@ -96,13 +111,36 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
     return undefined;
   }
 
+  private getAllLeaves(node: Section): Section[] {
+    const leaves: Section[] = [];
+    if (!node || !node.children) {
+      if (node.collapsibleState === vscode.TreeItemCollapsibleState.None) {
+          leaves.push(node);
+      }
+      return leaves;
+    }
+
+    const queue: Section[] = [...node.children];
+    while (queue.length > 0) {
+      const currentNode = queue.shift();
+      if (currentNode) {
+        if (currentNode.children && currentNode.children.length > 0) {
+          currentNode.children.forEach(child => queue.push(child));
+        } else {
+          leaves.push(currentNode);
+        }
+      }
+    }
+    return leaves;
+  }
+
   public findLeafByLabel(label: string): Section | undefined {
-      const allLeaves = this.leaves;
+      const allLeaves = this.getAllLeaves(this.taskRoot as Section);;
       return allLeaves.find(leaf => leaf.label === label);
   }
 
   public getLeafSiblings(currentItem: Section): { siblings: Section[], currentIndex: number } {
-    const parent = this.findParent(this.taskRoot, currentItem);
+    const parent = this.findParent(this.taskRoot as Section, currentItem);
     if (!parent || !parent.children) {
       return { siblings: [], currentIndex: -1 };
     }
@@ -113,7 +151,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
 
   public findNextLeaf(currentItem: Section): Section | undefined {
     
-    const allLeaves = this.leaves;
+    const allLeaves = this.getAllLeaves(this.taskRoot as Section);
     const currentIndex = allLeaves.findIndex(leaf => leaf.label === currentItem.label);
 
     if (currentIndex === -1 || currentIndex >= allLeaves.length - 1) {
@@ -125,7 +163,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section> {
 
   public findPrevLeaf(currentItem: Section): Section | undefined {
     
-    const allLeaves = this.leaves;
+    const allLeaves = this.getAllLeaves(this.taskRoot as Section);
     const currentIndex = allLeaves.findIndex(leaf => leaf.label === currentItem.label);
 
     if (currentIndex <= 0) {
@@ -142,10 +180,12 @@ export class Section extends vscode.TreeItem {
     public readonly children: Section[] | undefined,
     collapsibleState: vscode.TreeItemCollapsibleState,
     iconName: string,
-    public readonly filePath? : string
+    public readonly filePath? : string,
+    public readonly folderPath?: string
   ) {
     super(label, collapsibleState);
     this.iconPath = new vscode.ThemeIcon(iconName);
+    this.contextValue = children ? 'parent' : 'leaf'; 
 
     if (collapsibleState === vscode.TreeItemCollapsibleState.None) {
       this.command = {

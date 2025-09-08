@@ -8,7 +8,7 @@ let currentPanel: vscode.WebviewPanel | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
 
-	const leftProvider = new TaskProvider();
+	const leftProvider = new TaskProvider(context);
   vscode.window.registerTreeDataProvider('leftView', leftProvider);
 
   const disposable = vscode.commands.registerCommand('sprout.lineClicked', (item: Section) => {
@@ -106,11 +106,10 @@ function getWebviewContent(
     htmlContent = htmlContent.replace('{{TITLE}}', item.label);
     htmlContent = htmlContent.replace('{{LABEL}}', item.label);
 
-    const basePath = path.join(extensionPath)
     let description = '';
     if (item.filePath)
     {
-      const markdownPath = path.join(basePath, item.filePath);
+      const markdownPath = item.filePath;
       try {
           const markdownContent = fs.readFileSync(markdownPath, 'utf8');
           description = marked.parse(markdownContent) as string;
