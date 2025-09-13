@@ -3,6 +3,8 @@ import { TaskProvider, Section } from './taskProvider.js'
 import * as path from 'path';
 import * as fs from 'fs';
 import { marked } from 'marked';
+import { exec } from 'child_process';
+import * as os from 'os';
 
 let currentPanel: vscode.WebviewPanel | undefined;
 
@@ -36,6 +38,9 @@ export function activate(context: vscode.ExtensionContext) {
                         break; 
                     case 'prevItem':
                         vscode.commands.executeCommand('sprout.goToPrevItem', message.label);
+                        break;
+                    case 'cloneProject':
+                        vscode.commands.executeCommand('sprout.cloneProject', message.label);
                         break;
                 }
             },
@@ -76,7 +81,38 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  context.subscriptions.push(nextItemDisposable, prevItemDisposable);
+  const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string) => {
+    const currentItem = leftProvider.findLeafByLabel(label);
+    if (currentItem && currentItem.shellConfigPath) {
+      try {
+          const destination = path.join(os.homedir(), 'test-clone', 'mattermost');
+          
+          // Execute the Node.js script and capture all output
+          exec(`"${process.execPath}" "${currentItem.shellConfigPath}"`, (error, stdout, stderr) => {
+              // Log all stdout and stderr output
+              console.log(`stdout: ${stdout}`);
+              console.error(`stderr: ${stderr}`);
+
+              if (error) {
+                  vscode.window.showErrorMessage(`Script failed with error: ${error.message}`);
+                  return;
+              }
+
+              vscode.window.showInformationMessage('Project cloned successfully.');
+              leftProvider.addClonedRepo('mattermost', destination);
+          });
+        } catch (error: any) {
+            vscode.window.showErrorMessage(`Failed to start command execution: ${error.message}`);
+        }
+    }
+  });
+
+  const openFileDisposable = vscode.commands.registerCommand('sprout.openFile', (fileUri: vscode.Uri) => {
+        vscode.commands.executeCommand('vscode.open', fileUri);
+    });
+
+
+  context.subscriptions.push(nextItemDisposable, prevItemDisposable, cloneProjectDisposable, openFileDisposable);
 }
 
 function getWebviewContent(
@@ -104,7 +140,6 @@ function getWebviewContent(
 
     htmlContent = htmlContent.replace('{{PAGINATION}}', paginationHtml);
     htmlContent = htmlContent.replace('{{TITLE}}', item.label);
-    htmlContent = htmlContent.replace('{{LABEL}}', item.label);
 
     let description = '';
     if (item.filePath)
@@ -123,7 +158,17 @@ function getWebviewContent(
       description = `Description of <strong>${item.label}</strong>.`;
     }
 
+    let cloneButtonHtml = '';
+    if (item.shellConfigPath) {
+        cloneButtonHtml = `
+            <button id="cloneButton">
+                Clone Project
+            </button>
+        `;
+    }
+
     htmlContent = htmlContent.replace('{{DESCRIPTION}}', description);
+    htmlContent = htmlContent.replace('{{CLONE_BUTTON}}', cloneButtonHtml);
     htmlContent = htmlContent.replace('{{LABEL}}', item.label);
 
     return htmlContent;
