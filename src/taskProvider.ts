@@ -63,7 +63,6 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
           collapsibleState,
           "book",
           path.join(sectionPath, "task.md"),
-          metaData.children ? undefined : sectionPath,
           fs.existsSync(shellConfigPath) ? shellConfigPath : undefined
         );
 
@@ -76,8 +75,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
       children,
       collapsibleState,
       "file-directory",
-      metaData.file,
-      metaData.children ? undefined : sectionPath
+      metaData.file
     );
   }
 
@@ -88,7 +86,6 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
   getChildren(element?: Section): vscode.ProviderResult<Section[] | vscode.TreeItem[]> {
       if (element) {
           const currentPath = element.clonePath;
-
           if (currentPath) {
               const children = fs.readdirSync(currentPath, { withFileTypes: true })
                   .filter(dirent => !dirent.name.startsWith('.') && dirent.name !== 'node_modules')
@@ -102,6 +99,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
                               [],
                               vscode.TreeItemCollapsibleState.Collapsed,
                               "folder",
+                              undefined,
                               undefined,
                               childPath
                           );
@@ -217,7 +215,6 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
                 vscode.TreeItemCollapsibleState.Collapsed,
                 "repo",
                 undefined,
-                destination,
                 undefined,
                 destination
             );
@@ -235,7 +232,6 @@ export class Section extends vscode.TreeItem {
     collapsibleState: vscode.TreeItemCollapsibleState,
     iconName: string,
     public readonly filePath? : string,
-    public readonly folderPath?: string,
     public readonly shellConfigPath?: string,
     public readonly clonePath?: string
   ) {

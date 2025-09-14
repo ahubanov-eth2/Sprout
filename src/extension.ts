@@ -87,9 +87,7 @@ export function activate(context: vscode.ExtensionContext) {
       try {
           const destination = path.join(os.homedir(), 'test-clone', 'mattermost');
           
-          // Execute the Node.js script and capture all output
           exec(`"${process.execPath}" "${currentItem.shellConfigPath}"`, (error, stdout, stderr) => {
-              // Log all stdout and stderr output
               console.log(`stdout: ${stdout}`);
               console.error(`stderr: ${stderr}`);
 
