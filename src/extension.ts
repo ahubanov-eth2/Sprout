@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
                         vscode.commands.executeCommand('sprout.goToPrevItem', message.label);
                         break;
                     case 'cloneProject':
-                        vscode.commands.executeCommand('sprout.cloneProject', message.label);
+                        vscode.commands.executeCommand('sprout.cloneProject', message.label, message.repoName);
                         break;
                 }
             },
@@ -81,11 +81,11 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string) => {
+  const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string, repoName: string) => {
     const currentItem = leftProvider.findLeafByLabel(label);
     if (currentItem && currentItem.shellConfigPath) {
       try {
-          const destination = path.join(os.homedir(), 'test-clone', 'mattermost');
+          const destination = path.join(os.homedir(), 'test-clone', repoName);
           
           exec(`"${process.execPath}" "${currentItem.shellConfigPath}"`, (error, stdout, stderr) => {
               console.log(`stdout: ${stdout}`);
@@ -97,7 +97,7 @@ export function activate(context: vscode.ExtensionContext) {
               }
 
               vscode.window.showInformationMessage('Project cloned successfully.');
-              leftProvider.addClonedRepo('mattermost', destination);
+              leftProvider.addClonedRepo(repoName, destination);
           });
         } catch (error: any) {
             vscode.window.showErrorMessage(`Failed to start command execution: ${error.message}`);
@@ -159,7 +159,7 @@ function getWebviewContent(
     let cloneButtonHtml = '';
     if (item.shellConfigPath) {
         cloneButtonHtml = `
-            <button id="cloneButton">
+            <button id="cloneButton" data-repo-name="${item.repoName}">
                 Clone Project
             </button>
         `;

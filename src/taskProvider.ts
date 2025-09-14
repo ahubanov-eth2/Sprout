@@ -38,6 +38,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
     const lessonInfoPath = path.join(sectionPath, 'lesson-info.yaml');
     const taskInfoPath = path.join(sectionPath, 'task-info.yaml');
     const shellConfigPath = path.join(sectionPath, 'config.js');
+    const markdownPath = path.join(sectionPath, 'task.md');
 
     let metaData: any;
     let children: Section[] | undefined;
@@ -57,13 +58,26 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
         const taskInfoContent = fs.readFileSync(taskInfoPath, 'utf8');
         metaData = yaml.load(taskInfoContent) as any;
 
+        let repoName = 'project';
+        if (fs.existsSync(shellConfigPath)) {
+          const markdownContent = fs.readFileSync(markdownPath, 'utf8');
+          const markdownRegex = /\[([^\]]+)\]\((https:\/\/github.com\/[^/]+\/([^)]+))\)/;
+          const match = markdownContent.match(markdownRegex);
+
+          if (match && match.length > 3) {
+              repoName = match[3];
+          }
+        }
+      
         return new Section(
           metaData.custom_name,
           children,
           collapsibleState,
           "book",
           path.join(sectionPath, "task.md"),
-          fs.existsSync(shellConfigPath) ? shellConfigPath : undefined
+          fs.existsSync(shellConfigPath) ? shellConfigPath : undefined,
+          undefined,
+          fs.existsSync(shellConfigPath) ? repoName : undefined,
         );
 
     } else {
@@ -233,7 +247,8 @@ export class Section extends vscode.TreeItem {
     iconName: string,
     public readonly filePath? : string,
     public readonly shellConfigPath?: string,
-    public readonly clonePath?: string
+    public readonly clonePath?: string,
+    public readonly repoName?: string
   ) {
     super(label, collapsibleState);
     this.iconPath = new vscode.ThemeIcon(iconName);
