@@ -24,13 +24,13 @@ export function activate(context: vscode.ExtensionContext) {
     const parentLabel = (parent !== undefined) ? parent.label : ""
 
     if (currentPanel) {
-        currentPanel.reveal(vscode.ViewColumn.Two, true);
+        currentPanel.reveal(vscode.ViewColumn.One, true);
         updatePanelContent(currentPanel, item, context, siblings, currentIndex, parentLabel);
     } else {
         currentPanel = vscode.window.createWebviewPanel(
           'myRightPanel',
           'My Right Panel',
-          { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
+          { viewColumn: vscode.ViewColumn.One, preserveFocus: true },
           { enableScripts: true }
         );
 
