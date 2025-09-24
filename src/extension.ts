@@ -17,6 +17,11 @@ export function activate(context: vscode.ExtensionContext) {
   const fileProvider = new FileTreeDataProvider();
   vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
 
+  const destinationPath = path.join(os.homedir(), 'test-clone');
+  if (fs.existsSync(destinationPath)) {
+      fileProvider.setRepoPath(destinationPath);
+  }
+
   const disposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
     
     const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
@@ -100,11 +105,17 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string, repoName: string) => {
+    const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string, repoName: string) => {
         const currentItem = leftProvider.findLeafByLabel(label);
         if (currentItem && currentItem.shellConfigPath) {
             try {
                 const destination = path.join(os.homedir(), 'test-clone');
+
+                if (fs.existsSync(destination)) {
+                    vscode.window.showInformationMessage('Project already cloned.');
+                    fileProvider.setRepoPath(destination);
+                    return;
+                }
 
                 exec(`"${process.execPath}" "${currentItem.shellConfigPath}"`, (error, stdout, stderr) => {
                     console.log(`stdout: ${stdout}`);
