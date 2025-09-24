@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { TaskProvider, Section } from './taskProvider.js'
+import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 import * as path from 'path';
 import * as fs from 'fs';
 import { marked } from 'marked';
@@ -12,6 +13,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const leftProvider = new TaskProvider(context);
   vscode.window.registerTreeDataProvider('leftView', leftProvider);
+
+  const fileProvider = new FileTreeDataProvider();
+  vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
 
   const disposable = vscode.commands.registerCommand('sprout.lineClicked', (item: Section) => {
     
@@ -81,34 +85,34 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string, repoName: string) => {
-    const currentItem = leftProvider.findLeafByLabel(label);
-    if (currentItem && currentItem.shellConfigPath) {
-      try {
-          const destination = path.join(os.homedir(), 'test-clone', repoName);
-          
-          exec(`"${process.execPath}" "${currentItem.shellConfigPath}"`, (error, stdout, stderr) => {
-              console.log(`stdout: ${stdout}`);
-              console.error(`stderr: ${stderr}`);
+const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string, repoName: string) => {
+        const currentItem = leftProvider.findLeafByLabel(label);
+        if (currentItem && currentItem.shellConfigPath) {
+            try {
+                const destination = path.join(os.homedir(), 'test-clone');
 
-              if (error) {
-                  vscode.window.showErrorMessage(`Script failed with error: ${error.message}`);
-                  return;
-              }
+                exec(`"${process.execPath}" "${currentItem.shellConfigPath}"`, (error, stdout, stderr) => {
+                    console.log(`stdout: ${stdout}`);
+                    console.error(`stderr: ${stderr}`);
 
-              vscode.window.showInformationMessage('Project cloned successfully.');
-              leftProvider.addClonedRepo(repoName, destination);
-          });
-        } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to start command execution: ${error.message}`);
+                    if (error) {
+                        vscode.window.showErrorMessage(`Script failed with error: ${error.message}`);
+                        return;
+                    }
+
+                    vscode.window.showInformationMessage('Project cloned successfully.');
+                    
+                    fileProvider.setRepoPath(destination);
+                });
+            } catch (error: any) {
+                vscode.window.showErrorMessage(`Failed to start command execution: ${error.message}`);
+            }
         }
-    }
-  });
-
-  const openFileDisposable = vscode.commands.registerCommand('sprout.openFile', (fileUri: vscode.Uri) => {
-        vscode.commands.executeCommand('vscode.open', fileUri);
     });
 
+  const openFileDisposable = vscode.commands.registerCommand('sprout.openFile', (uri: vscode.Uri) => {
+        vscode.window.showTextDocument(uri);
+    })
 
   context.subscriptions.push(nextItemDisposable, prevItemDisposable, cloneProjectDisposable, openFileDisposable);
 }

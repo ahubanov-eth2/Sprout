@@ -29,6 +29,10 @@
           "icon": "icons.png",
           "id": "leftView",
           "name": "Task List"
+        },
+        {
+          "id": "clonedReposView",
+          "name": "Cloned Repositories"
         }
       ]
     }

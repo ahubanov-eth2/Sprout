@@ -98,46 +98,13 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
   }
 
   getChildren(element?: Section): vscode.ProviderResult<Section[] | vscode.TreeItem[]> {
-      if (element) {
-          const currentPath = element.clonePath;
-          if (currentPath) {
-              const children = fs.readdirSync(currentPath, { withFileTypes: true })
-                  .filter(dirent => !dirent.name.startsWith('.') && dirent.name !== 'node_modules')
-                  .map(dirent => {
-                      const childPath = path.join(currentPath, dirent.name);
-                      const isDirectory = dirent.isDirectory();
-                      
-                      if (isDirectory) {
-                          return new Section(
-                              dirent.name,
-                              [],
-                              vscode.TreeItemCollapsibleState.Collapsed,
-                              "folder",
-                              undefined,
-                              undefined,
-                              childPath
-                          );
-                      } else {
-                          const fileItem = new vscode.TreeItem(dirent.name, vscode.TreeItemCollapsibleState.None);
-                          fileItem.iconPath = new vscode.ThemeIcon("file");
-                          fileItem.resourceUri = vscode.Uri.file(childPath);
-                          fileItem.command = {
-                              command: 'sprout.openFile',
-                              title: 'Open File',
-                              arguments: [fileItem.resourceUri]
-                          };
-                          return fileItem;
-                      }
-                  });
-              return children;
-          } else {
-              return element.children;
-          }
-      } else if (this.taskRoot) {
-          return this.taskRoot.children;
-      }
-      return [];
-  }
+    if (element) {
+        return element.children;
+    } else if (this.taskRoot) {
+        return this.taskRoot.children;
+    }
+    return [];
+}
 
   getRoot(): Section {
     return this.taskRoot as Section;
@@ -220,23 +187,6 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
 
     return allLeaves[currentIndex - 1];
   }
-
-  public async addClonedRepo(repoName: string, destination: string) {
-        if (this.taskRoot && this.taskRoot.children) {
-            const newRepoSection = new Section(
-                repoName,
-                undefined, 
-                vscode.TreeItemCollapsibleState.Collapsed,
-                "repo",
-                undefined,
-                undefined,
-                destination
-            );
-
-            this.taskRoot.children.push(newRepoSection);
-            this._onDidChangeTreeData.fire();
-        }
-    }
 }
 
 export class Section extends vscode.TreeItem {
