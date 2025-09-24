@@ -17,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
   const fileProvider = new FileTreeDataProvider();
   vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
 
-  const disposable = vscode.commands.registerCommand('sprout.lineClicked', (item: Section) => {
+  const disposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
     
     const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
     const parent = leftProvider.findParent(leftProvider.getRoot(), item);
@@ -57,6 +57,21 @@ export function activate(context: vscode.ExtensionContext) {
         currentPanel.onDidDispose(() => {
           currentPanel = undefined;
         }, null, context.subscriptions);
+    }
+
+    if (item.fileToOpen) {
+      const clonedRepoPath = fileProvider.getRepoPath();
+      if (clonedRepoPath) {
+          const fileUri = vscode.Uri.file(path.join(clonedRepoPath, item.fileToOpen));
+          try {
+              const doc = await vscode.workspace.openTextDocument(fileUri);
+              await vscode.window.showTextDocument(doc, vscode.ViewColumn.Two);
+          } catch (error) {
+              vscode.window.showErrorMessage(`Could not open file: ${item.fileToOpen}`);
+          }
+      } else {
+          vscode.window.showWarningMessage('No cloned repository found to open the file.');
+      }
     }
   });
   context.subscriptions.push(disposable);

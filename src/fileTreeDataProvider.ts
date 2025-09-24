@@ -14,6 +14,10 @@ export class FileTreeDataProvider implements vscode.TreeDataProvider<vscode.Tree
         this._onDidChangeTreeData.fire();
     }
 
+    getRepoPath(): string | undefined {
+        return this.repoPath;
+    }
+
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
     }
