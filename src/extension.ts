@@ -4,10 +4,10 @@ import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 import * as path from 'path';
 import * as fs from 'fs';
 import { marked } from 'marked';
-import { exec } from 'child_process';
 import * as os from 'os';
 
 let currentPanel: vscode.WebviewPanel | undefined;
+let onDidEndTaskDisposable: vscode.Disposable | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -64,7 +64,6 @@ export function activate(context: vscode.ExtensionContext) {
     const parentLabel = (parent !== undefined) ? parent.label : ""
 
     let isFileOpen = false;
-
     if (item.fileToOpen) {
       const clonedRepoPath = fileProvider.getRepoPath();
       if (clonedRepoPath) {
@@ -74,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
               await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
               isFileOpen = true;
           } catch (error) {
-              vscode.window.showErrorMessage(`Could not open file: ${item.fileToOpen}`);
+              vscode.window.showErrorMessage(`Could not open file: ${fileUri}`);
           }
       } else {
           vscode.window.showWarningMessage('No cloned repository found to open the file.');
@@ -85,6 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }
 
+    await vscode.commands.executeCommand('workbench.action.closePanel');
     vscode.commands.executeCommand('setContext', 'sprout.hasClonedRepo', isFileOpen);
     createOrRevealPanel();
 
@@ -126,27 +126,47 @@ export function activate(context: vscode.ExtensionContext) {
       const currentItem = leftProvider.findLeafByLabel(label);
       if (currentItem && currentItem.shellConfigPath) {
           try {
-              const destination = path.join(os.homedir(), 'test-clone');
+              const baseDestination = path.join(os.homedir(), 'test-clone');
+              const destination = path.join(baseDestination, 'mattermost');
 
               if (fs.existsSync(destination)) {
                   vscode.window.showInformationMessage('Project already cloned.');
-                  fileProvider.setRepoPath(destination);
+                  fileProvider.setRepoPath(baseDestination);
                   return;
               }
 
-              exec(`"${process.execPath}" "${currentItem.shellConfigPath}"`, (error, stdout, stderr) => {
-                  console.log(`stdout: ${stdout}`);
-                  console.error(`stderr: ${stderr}`);
+              const fullCommand = 
+                  `git clone https://github.com/mattermost/mattermost.git "${destination}" && ` +
+                  `cd "${destination}" && ` +
+                  `git checkout 603c26a5bcda365917285b8f32c6982e170c5cd3 && ` +
+                  `cd "webapp"`;
 
-                  if (error) {
-                      vscode.window.showErrorMessage(`Script failed with error: ${error.message}`);
-                      return;
+                  // TODO: add npm install here somehow
+
+              const shellExecution = new vscode.ShellExecution(fullCommand);
+              const task = new vscode.Task(
+                  { type: 'sprout-clone', name: `Cloning ${repoName}` },
+                  vscode.TaskScope.Workspace,
+                  `Cloning ${repoName}`,
+                  'Sprout',
+                  shellExecution
+              );
+
+              task.presentationOptions = {
+                  reveal: vscode.TaskRevealKind.Always,
+                  panel: vscode.TaskPanelKind.Shared
+              };
+
+              // vscode.commands.executeCommand('workbench.action.positionPanelRight');
+
+              onDidEndTaskDisposable = vscode.tasks.onDidEndTask(e => {
+                  if (e.execution.task.name === `Cloning ${repoName}`) {
+                      vscode.window.showInformationMessage('Task ended.');
+                      fileProvider.setRepoPath(baseDestination);
                   }
-
-                  vscode.window.showInformationMessage('Project cloned successfully.');
-                  
-                  fileProvider.setRepoPath(destination);
               });
+
+              vscode.tasks.executeTask(task);
           } catch (error: any) {
               vscode.window.showErrorMessage(`Failed to start command execution: ${error.message}`);
           }
