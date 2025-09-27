@@ -8,6 +8,14 @@
             font-size: 20px;
         }
 
+        .header-container {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1em; 
+            margin-right: 2.5em;
+        }
+
         .dropdown {
             margin-bottom: 0.5em;
         }
@@ -50,19 +58,63 @@
         }
 
         .navigation-buttons button {
-            background-color: #0e4b63;
             color: white;
-            font-size: 1.2rem;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 12px;
+            font-size: 16px;
+            padding: 8px 16px;
+            border-radius: 4px;
             cursor: pointer;
-            margin-top: 20px;
             transition: background-color 0.3s ease;
         }
 
-        .navigation-buttons button:hover {
-            background-color: #1f4ea7;
+        .navigation-buttons button + button {
+            margin-left: 20px;
+        }
+
+        #prevButton {
+            background-color: #323232;
+            border: 1px solid #8a8a8a;
+        }
+
+        #prevButton:hover {
+            background-color: #434343;
+        }
+
+        #nextButton {
+            background-color: #0078d4;
+            border: none;
+        }
+
+        #nextButton:hover {
+            background-color: #007ede;
+        }
+
+        #cloneButton {
+            background-color: #0078d4;
+            border: none;
+        }
+
+        #cloneButton:hover {
+            background-color: #007ede;
+        }
+
+        .breadcrumbs {
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .parent-title {
+            color: #8a8a8a; 
+        }
+
+        .separator {
+            color: #8a8a8a; 
+            margin: 0 8px; 
+        }
+
+        .current-title {
+            color: #0078d4; 
         }
 
         .pagination-container {
@@ -90,7 +142,17 @@
     </style>
     </head>
     <body data-item-label="{{LABEL}}" style="font-family: sans-serif; padding: 1em;">
-        <h3>{{PARENT_TITLE}}<h3>
+        <div class="header-container">
+            <div class="breadcrumbs">
+                <span class="parent-title">{{PARENT_TITLE}}</span>
+                <span class="separator">&gt;</span>
+                <span class="current-title">{{TITLE}}</span>
+            </div>
+            <div class="navigation-buttons">
+                <button id="prevButton">Previous</button>
+                <button id="nextButton">Next</button>
+            </div>
+        </div>
         {{PAGINATION}}
         <h2>{{TITLE}}</h2>
         <p>{{DESCRIPTION}}</p>
@@ -129,11 +191,6 @@
 
         <div class="navigation-buttons">
             {{CLONE_BUTTON}}
-        </div>
-
-        <div class="navigation-buttons">
-            <button id="prevButton">Previous</button>
-            <button id="nextButton">Next</button>
         </div>
 
         <script>

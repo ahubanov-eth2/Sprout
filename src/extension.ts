@@ -184,7 +184,7 @@ function getWebviewContent(
     }
 
     htmlContent = htmlContent.replace('{{PAGINATION}}', paginationHtml);
-    htmlContent = htmlContent.replace('{{TITLE}}', item.label);
+    htmlContent = htmlContent.replace(/{{TITLE}}/g, item.label)
 
     let description = '';
     if (item.filePath)
