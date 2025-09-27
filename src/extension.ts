@@ -22,34 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
       fileProvider.setRepoPath(destinationPath);
   }
 
-  const disposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
-    
-    const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
-    const parent = leftProvider.findParent(leftProvider.getRoot(), item);
-    const parentLabel = (parent !== undefined) ? parent.label : ""
-
-    let isFileOpen = false;
-
-    if (item.fileToOpen) {
-      const clonedRepoPath = fileProvider.getRepoPath();
-      if (clonedRepoPath) {
-          const fileUri = vscode.Uri.file(path.join(clonedRepoPath, item.fileToOpen));
-          try {
-              const doc = await vscode.workspace.openTextDocument(fileUri);
-              await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
-              isFileOpen = true;
-          } catch (error) {
-              vscode.window.showErrorMessage(`Could not open file: ${item.fileToOpen}`);
-          }
-      } else {
-          vscode.window.showWarningMessage('No cloned repository found to open the file.');
-      }
-    } else {
-        if (vscode.window.tabGroups.all.length > 1) {
-            await vscode.commands.executeCommand('workbench.action.closeOtherEditors');
-        }
-    }
-
+  function createOrRevealPanel(){
     if (currentPanel) {
         currentPanel.reveal(vscode.ViewColumn.One, true);
     } else {
@@ -82,6 +55,38 @@ export function activate(context: vscode.ExtensionContext) {
           currentPanel = undefined;
         }, null, context.subscriptions);
     }
+  }
+
+  const disposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
+    
+    const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
+    const parent = leftProvider.findParent(leftProvider.getRoot(), item);
+    const parentLabel = (parent !== undefined) ? parent.label : ""
+
+    let isFileOpen = false;
+
+    if (item.fileToOpen) {
+      const clonedRepoPath = fileProvider.getRepoPath();
+      if (clonedRepoPath) {
+          const fileUri = vscode.Uri.file(path.join(clonedRepoPath, item.fileToOpen));
+          try {
+              const doc = await vscode.workspace.openTextDocument(fileUri);
+              await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+              isFileOpen = true;
+          } catch (error) {
+              vscode.window.showErrorMessage(`Could not open file: ${item.fileToOpen}`);
+          }
+      } else {
+          vscode.window.showWarningMessage('No cloned repository found to open the file.');
+      }
+    } else {
+        if (vscode.window.tabGroups.all.length > 1) {
+            await vscode.commands.executeCommand('workbench.action.closeOtherEditors');
+        }
+    }
+
+    vscode.commands.executeCommand('setContext', 'sprout.hasClonedRepo', isFileOpen);
+    createOrRevealPanel();
 
     if (isFileOpen && currentPanel) {
       await vscode.commands.executeCommand('workbench.action.splitEditorToBelowGroup');
@@ -117,40 +122,40 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-    const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string, repoName: string) => {
-        const currentItem = leftProvider.findLeafByLabel(label);
-        if (currentItem && currentItem.shellConfigPath) {
-            try {
-                const destination = path.join(os.homedir(), 'test-clone');
+  const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string, repoName: string) => {
+      const currentItem = leftProvider.findLeafByLabel(label);
+      if (currentItem && currentItem.shellConfigPath) {
+          try {
+              const destination = path.join(os.homedir(), 'test-clone');
 
-                if (fs.existsSync(destination)) {
-                    vscode.window.showInformationMessage('Project already cloned.');
-                    fileProvider.setRepoPath(destination);
-                    return;
-                }
+              if (fs.existsSync(destination)) {
+                  vscode.window.showInformationMessage('Project already cloned.');
+                  fileProvider.setRepoPath(destination);
+                  return;
+              }
 
-                exec(`"${process.execPath}" "${currentItem.shellConfigPath}"`, (error, stdout, stderr) => {
-                    console.log(`stdout: ${stdout}`);
-                    console.error(`stderr: ${stderr}`);
+              exec(`"${process.execPath}" "${currentItem.shellConfigPath}"`, (error, stdout, stderr) => {
+                  console.log(`stdout: ${stdout}`);
+                  console.error(`stderr: ${stderr}`);
 
-                    if (error) {
-                        vscode.window.showErrorMessage(`Script failed with error: ${error.message}`);
-                        return;
-                    }
+                  if (error) {
+                      vscode.window.showErrorMessage(`Script failed with error: ${error.message}`);
+                      return;
+                  }
 
-                    vscode.window.showInformationMessage('Project cloned successfully.');
-                    
-                    fileProvider.setRepoPath(destination);
-                });
-            } catch (error: any) {
-                vscode.window.showErrorMessage(`Failed to start command execution: ${error.message}`);
-            }
-        }
-    });
+                  vscode.window.showInformationMessage('Project cloned successfully.');
+                  
+                  fileProvider.setRepoPath(destination);
+              });
+          } catch (error: any) {
+              vscode.window.showErrorMessage(`Failed to start command execution: ${error.message}`);
+          }
+      }
+  });
 
   const openFileDisposable = vscode.commands.registerCommand('sprout.openFile', (uri: vscode.Uri) => {
-        vscode.window.showTextDocument(uri);
-    })
+      vscode.window.showTextDocument(uri);
+  })
 
   context.subscriptions.push(nextItemDisposable, prevItemDisposable, cloneProjectDisposable, openFileDisposable);
 }

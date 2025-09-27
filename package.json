@@ -26,13 +26,14 @@
     "views": {
       "myLeftPanel": [
         {
+          "id": "clonedReposView",
+          "name": "Cloned Repositories",
+          "when": "sprout.hasClonedRepo"
+        },
+        {
           "icon": "icons.png",
           "id": "leftView",
           "name": "Task List"
-        },
-        {
-          "id": "clonedReposView",
-          "name": "Cloned Repositories"
         }
       ]
     }
