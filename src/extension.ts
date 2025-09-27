@@ -28,9 +28,30 @@ export function activate(context: vscode.ExtensionContext) {
     const parent = leftProvider.findParent(leftProvider.getRoot(), item);
     const parentLabel = (parent !== undefined) ? parent.label : ""
 
+    let isFileOpen = false;
+
+    if (item.fileToOpen) {
+      const clonedRepoPath = fileProvider.getRepoPath();
+      if (clonedRepoPath) {
+          const fileUri = vscode.Uri.file(path.join(clonedRepoPath, item.fileToOpen));
+          try {
+              const doc = await vscode.workspace.openTextDocument(fileUri);
+              await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+              isFileOpen = true;
+          } catch (error) {
+              vscode.window.showErrorMessage(`Could not open file: ${item.fileToOpen}`);
+          }
+      } else {
+          vscode.window.showWarningMessage('No cloned repository found to open the file.');
+      }
+    } else {
+        if (vscode.window.tabGroups.all.length > 1) {
+            await vscode.commands.executeCommand('workbench.action.closeOtherEditors');
+        }
+    }
+
     if (currentPanel) {
         currentPanel.reveal(vscode.ViewColumn.One, true);
-        updatePanelContent(currentPanel, item, context, siblings, currentIndex, parentLabel);
     } else {
         currentPanel = vscode.window.createWebviewPanel(
           'myRightPanel',
@@ -56,27 +77,18 @@ export function activate(context: vscode.ExtensionContext) {
             undefined,
             context.subscriptions
         );
-        
-        updatePanelContent(currentPanel, item, context, siblings, currentIndex, parentLabel);
 
         currentPanel.onDidDispose(() => {
           currentPanel = undefined;
         }, null, context.subscriptions);
     }
 
-    if (item.fileToOpen) {
-      const clonedRepoPath = fileProvider.getRepoPath();
-      if (clonedRepoPath) {
-          const fileUri = vscode.Uri.file(path.join(clonedRepoPath, item.fileToOpen));
-          try {
-              const doc = await vscode.workspace.openTextDocument(fileUri);
-              await vscode.window.showTextDocument(doc, vscode.ViewColumn.Two);
-          } catch (error) {
-              vscode.window.showErrorMessage(`Could not open file: ${item.fileToOpen}`);
-          }
-      } else {
-          vscode.window.showWarningMessage('No cloned repository found to open the file.');
-      }
+    if (isFileOpen && currentPanel) {
+      await vscode.commands.executeCommand('workbench.action.splitEditorToBelowGroup');
+    }
+
+    if (currentPanel) {
+        updatePanelContent(currentPanel, item, context, siblings, currentIndex, parentLabel);
     }
   });
   context.subscriptions.push(disposable);
