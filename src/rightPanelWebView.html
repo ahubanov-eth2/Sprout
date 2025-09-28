@@ -98,6 +98,15 @@
             background-color: #007ede;
         }
 
+        #highlightLinesButton {
+            background-color: #0078d4;
+            border: none;
+        }
+
+        #highlightLinesButton:hover {
+            background-color: #007ede;
+        }
+
         .breadcrumbs {
             font-size: 14px;
             display: flex;
@@ -141,7 +150,7 @@
 
     </style>
     </head>
-    <body data-item-label="{{LABEL}}" style="font-family: sans-serif; padding: 1em;">
+    <body data-item-label="{{LABEL}}" data-has-file="{{HAS_FILE_TO_OPEN}}" style="font-family: sans-serif; padding: 1em;">
         <div class="header-container">
             <div class="breadcrumbs">
                 <span class="parent-title">{{PARENT_TITLE}}</span>
@@ -149,6 +158,7 @@
                 <span class="current-title">{{TITLE}}</span>
             </div>
             <div class="navigation-buttons">
+                {{HIGHLIGHT_LINES_BUTTON}}
                 <button id="prevButton">Previous</button>
                 <button id="nextButton">Next</button>
             </div>
@@ -157,10 +167,17 @@
         <h2>{{TITLE}}</h2>
         <p>{{DESCRIPTION}}</p>
 
+        <div class="navigation-buttons">
+            {{CLONE_BUTTON}}
+        </div>
+
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const hintElements = document.querySelectorAll('.hint');
 
+                const vscode = acquireVsCodeApi();
+                const currentItemLabel = document.body.dataset.itemLabel;
+
+                const hintElements = document.querySelectorAll('.hint');
                 hintElements.forEach(hint => {
                     const dropdown = document.createElement('div');
                     dropdown.className = 'dropdown';
@@ -186,64 +203,70 @@
                         dropdownContent.style.maxHeight = isOpen ? `${dropdownContent.scrollHeight}px` : '0';
                     });
                 });
-            });
-        </script>
 
-        <div class="navigation-buttons">
-            {{CLONE_BUTTON}}
-        </div>
+                document.querySelectorAll('.dropdown-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const drop = header.parentElement;
+                        const content = drop.querySelector('.dropdown-content');
 
-        <script>
-            document.querySelectorAll('.dropdown-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    const drop = header.parentElement;
-                    const content = drop.querySelector('.dropdown-content');
-
-                    if (drop.classList.contains('open')) {
-                    content.style.maxHeight = content.scrollHeight + "px";
-                    requestAnimationFrame(() => {
-                        content.style.maxHeight = "0px";
-                    });
-                    drop.classList.remove('open');
-                    } else {
-                    drop.classList.add('open');
-                    content.style.maxHeight = content.scrollHeight + "px";
-                    content.addEventListener('transitionend', function clear() {
                         if (drop.classList.contains('open')) {
-                        content.style.maxHeight = "none";
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        requestAnimationFrame(() => {
+                            content.style.maxHeight = "0px";
+                        });
+                        drop.classList.remove('open');
+                        } else {
+                        drop.classList.add('open');
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        content.addEventListener('transitionend', function clear() {
+                            if (drop.classList.contains('open')) {
+                            content.style.maxHeight = "none";
+                            }
+                            content.removeEventListener('transitionend', clear);
+                        });
                         }
-                        content.removeEventListener('transitionend', clear);
                     });
-                    }
                 });
-            });
 
-            const vscode = acquireVsCodeApi();
-            const currentItemLabel = document.body.dataset.itemLabel;
+                const hasFileToOpen = document.body.dataset.hasFile === 'true';
+                const highlightButton = document.getElementById('highlightLinesButton');
+                if (!hasFileToOpen) {
+                    highlightButton?.remove();
+                }
 
-            document.getElementById('nextButton').addEventListener('click', () => {
-                vscode.postMessage({
-                    command: 'nextItem',
-                    label: currentItemLabel
+                if (highlightButton) {
+                    highlightButton.addEventListener('click', () => {
+                        vscode.postMessage({
+                            command: 'highlightLinesHint',
+                            label: currentItemLabel
+                        });
+                    });
+                }
+
+                document.getElementById('nextButton').addEventListener('click', () => {
+                    vscode.postMessage({
+                        command: 'nextItem',
+                        label: currentItemLabel
+                    });
                 });
-            });
 
-            document.getElementById('prevButton').addEventListener('click', () => {
-                vscode.postMessage({
-                    command: 'prevItem',
-                    label: currentItemLabel
+                document.getElementById('prevButton').addEventListener('click', () => {
+                    vscode.postMessage({
+                        command: 'prevItem',
+                        label: currentItemLabel
+                    });
                 });
-            });
 
-            document.getElementById('cloneButton').addEventListener('click', () => {
+                document.getElementById('cloneButton').addEventListener('click', () => {
 
-                const cloneButton = document.getElementById('cloneButton');
-                const repoName = cloneButton.getAttribute('data-repo-name');
+                    const cloneButton = document.getElementById('cloneButton');
+                    const repoName = cloneButton.getAttribute('data-repo-name');
 
-                vscode.postMessage({
-                    command: 'cloneProject',
-                    label: currentItemLabel,
-                    repoName: repoName
+                    vscode.postMessage({
+                        command: 'cloneProject',
+                        label: currentItemLabel,
+                        repoName: repoName
+                    });
                 });
             });
         </script>

@@ -8,6 +8,11 @@ import * as os from 'os';
 
 let currentPanel: vscode.WebviewPanel | undefined;
 let onDidEndTaskDisposable: vscode.Disposable | undefined;
+let activeFileUri: vscode.Uri | undefined;
+
+const hintDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: "#0078d4a0"
+});
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -45,6 +50,9 @@ export function activate(context: vscode.ExtensionContext) {
                     case 'cloneProject':
                         vscode.commands.executeCommand('sprout.cloneProject', message.label, message.repoName);
                         break;
+                    case 'highlightLinesHint':
+                        vscode.commands.executeCommand('sprout.highlightLinesHint', message.label);
+                        break;
                 }
             },
             undefined,
@@ -70,7 +78,8 @@ export function activate(context: vscode.ExtensionContext) {
           const fileUri = vscode.Uri.file(path.join(clonedRepoPath, item.fileToOpen));
           try {
               const doc = await vscode.workspace.openTextDocument(fileUri);
-              await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+              const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+              activeFileUri = fileUri; 
               isFileOpen = true;
           } catch (error) {
               vscode.window.showErrorMessage(`Could not open file: ${fileUri}`);
@@ -173,11 +182,43 @@ export function activate(context: vscode.ExtensionContext) {
       }
   });
 
+  const highlightLinesDisposable = vscode.commands.registerCommand('sprout.highlightLinesHint', async () => {
+      if (!activeFileUri) {
+          vscode.window.showWarningMessage('No active code editor found.');
+          return;
+      }
+
+      const codeEditor = vscode.window.visibleTextEditors.find(
+          editor => editor.document.uri.toString() === activeFileUri?.toString()
+      );
+
+      if (!codeEditor) {
+          vscode.window.showWarningMessage('The code editor for this file is not visible.');
+          return;
+      }
+
+      const line11 = codeEditor.document.lineAt(10);
+      const line26 = codeEditor.document.lineAt(25);
+
+      const linesToHighlight = [
+          line11.range,
+          line26.range
+      ];
+
+      codeEditor.setDecorations(hintDecorationType, linesToHighlight);
+      setTimeout(() => {
+          if (codeEditor) {
+            codeEditor.setDecorations(hintDecorationType, []);
+            // hintDecorationType.dispose();
+          }
+      }, 1500);
+  });
+
   const openFileDisposable = vscode.commands.registerCommand('sprout.openFile', (uri: vscode.Uri) => {
       vscode.window.showTextDocument(uri);
   })
 
-  context.subscriptions.push(nextItemDisposable, prevItemDisposable, cloneProjectDisposable, openFileDisposable);
+  context.subscriptions.push(nextItemDisposable, prevItemDisposable, cloneProjectDisposable, openFileDisposable, highlightLinesDisposable, hintDecorationType);
 }
 
 function getWebviewContent(
@@ -224,6 +265,7 @@ function getWebviewContent(
     }
 
     let cloneButtonHtml = '';
+    // TODO: shellConfigPath probably won't exist in the end
     if (item.shellConfigPath) {
         cloneButtonHtml = `
             <button id="cloneButton" data-repo-name="${item.repoName}">
@@ -235,6 +277,15 @@ function getWebviewContent(
     htmlContent = htmlContent.replace('{{DESCRIPTION}}', description);
     htmlContent = htmlContent.replace('{{CLONE_BUTTON}}', cloneButtonHtml);
     htmlContent = htmlContent.replace('{{LABEL}}', item.label);
+
+    let highlightLinesHtml = `
+      <button id="highlightLinesButton">
+          Show Hint: Highlight lines where changes are needed 
+      </button>
+    `;
+
+    htmlContent = htmlContent.replace('{{HIGHLIGHT_LINES_BUTTON}}', highlightLinesHtml);
+    htmlContent = htmlContent.replace('{{HAS_FILE_TO_OPEN}}', item.fileToOpen ? 'true' : 'false');
 
     return htmlContent;
 }
