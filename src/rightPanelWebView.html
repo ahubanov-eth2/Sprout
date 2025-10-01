@@ -290,6 +290,15 @@
                     });
                 }
 
+                if (showSolutionButton) {
+                    showSolutionButton.addEventListener('click', () => {
+                        vscode.postMessage({
+                            command: 'showSolution',
+                            label: currentItemLabel
+                        });
+                    });
+                }
+
                 document.getElementById('nextButton').addEventListener('click', () => {
                     vscode.postMessage({
                         command: 'nextItem',

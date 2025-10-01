@@ -5,6 +5,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { marked } from 'marked';
 import * as os from 'os';
+import { exec } from 'child_process';
+import * as Diff from 'diff';
 
 let currentPanel: vscode.WebviewPanel | undefined;
 let onDidEndTaskDisposable: vscode.Disposable | undefined;
@@ -52,6 +54,9 @@ export function activate(context: vscode.ExtensionContext) {
                         break;
                     case 'highlightLinesHint':
                         vscode.commands.executeCommand('sprout.highlightLinesHint', message.label);
+                        break;
+                    case 'showSolution':
+                        vscode.commands.executeCommand('sprout.showSolution', message.label);
                         break;
                 }
             },
@@ -182,6 +187,74 @@ export function activate(context: vscode.ExtensionContext) {
       }
   });
 
+  const showSolutionDisposable = vscode.commands.registerCommand('sprout.showSolution', async () => {
+      if (!activeFileUri) {
+          vscode.window.showWarningMessage('No active code editor found.');
+          return;
+      }
+
+      const startLine = 0;
+      const endLine = 20;
+
+      const solutionCommit = '632b231283';
+
+      const repoPath = fileProvider.getRepoPath() as string;
+      const actualRepoPath = path.join(repoPath, 'mattermost');
+      const relativeFilePath = path.relative(actualRepoPath, activeFileUri.fsPath);
+
+      const solutionCommand = `git --git-dir=${path.join(actualRepoPath, '.git')} show ${solutionCommit}:${relativeFilePath}`;
+      const currentCommand = `cat ${path.join(actualRepoPath, relativeFilePath)}`;
+
+      let solutionContent: string;
+      let currentContent: string;
+
+      try {
+          const solutionResult = await new Promise<string>((resolve, reject) => {
+              exec(solutionCommand, { cwd: repoPath }, (err, stdout, stderr) => {
+                  if (err) {
+                      reject(new Error(`Failed to get solution content: ${stderr}`));
+                  }
+                  resolve(stdout);
+              });
+          });
+
+          const currentResult = await new Promise<string>((resolve, reject) => {
+              exec(currentCommand, { cwd: repoPath }, (err, stdout, stderr) => {
+                  if (err) {
+                      reject(new Error(`Failed to get current content: ${stderr}`));
+                  }
+                  resolve(stdout);
+              });
+          });
+
+          solutionContent = solutionResult;
+          currentContent = currentResult;
+
+          const currentLines = currentContent.split('\n').slice(startLine, endLine);
+          const solutionLines = solutionContent.split('\n').slice(startLine, endLine);
+
+          const currentTempFilePath = path.join(os.tmpdir(), `current-temp-${path.basename(relativeFilePath)}`);
+          const solutionTempFilePath = path.join(os.tmpdir(), `solution-temp-${path.basename(relativeFilePath)}`);
+          const currentTempFileUri = vscode.Uri.file(currentTempFilePath);
+          const solutionTempFileUri = vscode.Uri.file(solutionTempFilePath);
+          
+          fs.writeFileSync(currentTempFilePath, currentLines.join('\n'));
+          fs.writeFileSync(solutionTempFilePath, solutionLines.join('\n'));
+
+          const title = `Solution for lines ${startLine}-${endLine} of ${path.basename(activeFileUri.fsPath)}`;
+          await vscode.commands.executeCommand('vscode.diff', currentTempFileUri, solutionTempFileUri, title);
+
+          setTimeout(() => {
+              fs.unlink(currentTempFilePath, (err) => err && console.error('Failed to delete temp file:', err));
+              fs.unlink(solutionTempFilePath, (err) => err && console.error('Failed to delete temp file:', err));
+          }, 5000);
+
+      } catch (e: any) {
+          vscode.window.showErrorMessage(e.message);
+          return;
+      }
+  })
+
   const highlightLinesDisposable = vscode.commands.registerCommand('sprout.highlightLinesHint', async () => {
       if (!activeFileUri) {
           vscode.window.showWarningMessage('No active code editor found.');
@@ -218,7 +291,15 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showTextDocument(uri);
   })
 
-  context.subscriptions.push(nextItemDisposable, prevItemDisposable, cloneProjectDisposable, openFileDisposable, highlightLinesDisposable, hintDecorationType);
+  context.subscriptions.push(
+    nextItemDisposable, 
+    prevItemDisposable, 
+    cloneProjectDisposable, 
+    openFileDisposable, 
+    showSolutionDisposable,
+    highlightLinesDisposable, 
+    hintDecorationType
+  );
 }
 
 function getWebviewContent(
