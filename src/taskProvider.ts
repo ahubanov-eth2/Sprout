@@ -37,8 +37,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
   private async loadSection(sectionPath: string): Promise<Section> {
     const lessonInfoPath = path.join(sectionPath, 'lesson-info.yaml');
     const taskInfoPath = path.join(sectionPath, 'task-info.yaml');
-    const shellConfigPath = path.join(sectionPath, 'config.js');
-    const markdownPath = path.join(sectionPath, 'task.md');
+    const metadataPath = path.join(sectionPath, 'metadata.json');
     const filepathTextPath = path.join(sectionPath, 'filepath.txt');
 
     let metaData: any;
@@ -60,13 +59,13 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
         metaData = yaml.load(taskInfoContent) as any;
 
         let repoName = 'project';
-        if (fs.existsSync(shellConfigPath)) {
-          const markdownContent = fs.readFileSync(markdownPath, 'utf8');
-          const markdownRegex = /\[([^\]]+)\]\((https:\/\/github.com\/[^/]+\/([^)]+))\)/;
-          const match = markdownContent.match(markdownRegex);
-
-          if (match && match.length > 3) {
-              repoName = match[3];
+        if (fs.existsSync(metadataPath)) {
+          try {
+              const jsonContent = fs.readFileSync(metadataPath, 'utf8');
+              const data = JSON.parse(jsonContent);
+              repoName = data.repo_name;
+          } catch (error) {
+              console.error('Error reading or parsing the JSON file:', error);
           }
         }
 
@@ -81,9 +80,9 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
           collapsibleState,
           "book",
           path.join(sectionPath, "task.md"),
-          fs.existsSync(shellConfigPath) ? shellConfigPath : undefined,
+          fs.existsSync(metadataPath) ? metadataPath : undefined,
           undefined,
-          fs.existsSync(shellConfigPath) ? repoName : undefined,
+          fs.existsSync(metadataPath) ? repoName : undefined,
           fileToOpen
         );
 
@@ -203,7 +202,7 @@ export class Section extends vscode.TreeItem {
     collapsibleState: vscode.TreeItemCollapsibleState,
     iconName: string,
     public readonly filePath? : string,
-    public readonly shellConfigPath?: string,
+    public readonly metaDataPath?: string,
     public readonly clonePath?: string,
     public readonly repoName?: string,
     public readonly fileToOpen?: string 

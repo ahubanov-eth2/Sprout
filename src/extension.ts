@@ -6,7 +6,6 @@ import * as fs from 'fs';
 import { marked } from 'marked';
 import * as os from 'os';
 import { exec } from 'child_process';
-import * as Diff from 'diff';
 
 let currentPanel: vscode.WebviewPanel | undefined;
 let onDidEndTaskDisposable: vscode.Disposable | undefined;
@@ -18,7 +17,7 @@ const hintDecorationType = vscode.window.createTextEditorDecorationType({
 
 export function activate(context: vscode.ExtensionContext) {
 
-	const leftProvider = new TaskProvider(context);
+  const leftProvider = new TaskProvider(context);
   vscode.window.registerTreeDataProvider('leftView', leftProvider);
 
   const fileProvider = new FileTreeDataProvider();
@@ -138,10 +137,24 @@ export function activate(context: vscode.ExtensionContext) {
 
   const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string, repoName: string) => {
       const currentItem = leftProvider.findLeafByLabel(label);
-      if (currentItem && currentItem.shellConfigPath) {
+      if (currentItem && currentItem.metaDataPath) {
           try {
-              const baseDestination = path.join(os.homedir(), 'test-clone');
-              const destination = path.join(baseDestination, 'mattermost');
+              let repoName = "repo";
+              let url = "url";
+              let commit = "commit";
+              if (fs.existsSync(currentItem.metaDataPath)) {
+                try {
+                    const jsonContent = fs.readFileSync(currentItem.metaDataPath, 'utf8');
+                    const data = JSON.parse(jsonContent);
+                    repoName = data.repo_name;
+                    url = data.url;
+                    commit = data.commit;
+                } catch (error) {
+                    console.error('Error reading or parsing the JSON file:', error);
+                }
+              }
+              const baseDestination = path.join(os.homedir(), 'open-source-projects');
+              const destination = path.join(baseDestination, repoName);
 
               if (fs.existsSync(destination)) {
                   vscode.window.showInformationMessage('Project already cloned.');
@@ -150,11 +163,11 @@ export function activate(context: vscode.ExtensionContext) {
               }
 
               const fullCommand = 
-                  `git clone https://github.com/mattermost/mattermost.git "${destination}" && ` +
+                  `git clone "${url}" "${destination}" && ` +
                   `cd "${destination}" && ` +
-                  `git checkout 603c26a5bcda365917285b8f32c6982e170c5cd3 && ` +
+                  `git checkout "${commit}" && ` +
                   `cd "webapp"`;
-
+                  // TODO: make the cd "webapp" generic
                   // TODO: add npm install here somehow
 
               const shellExecution = new vscode.ShellExecution(fullCommand);
@@ -346,8 +359,7 @@ function getWebviewContent(
     }
 
     let cloneButtonHtml = '';
-    // TODO: shellConfigPath probably won't exist in the end
-    if (item.shellConfigPath) {
+    if (item.metaDataPath) {
         cloneButtonHtml = `
             <button id="cloneButton" data-repo-name="${item.repoName}">
                 Clone Project
