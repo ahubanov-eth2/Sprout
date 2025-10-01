@@ -10,7 +10,7 @@
 
         .header-container {
             display: flex; 
-            justify-content: space-between; 
+            justify-content: flex-start; 
             align-items: center; 
             margin-bottom: 1em; 
             margin-right: 2.5em;
@@ -70,6 +70,24 @@
             margin-left: 20px;
         }
 
+        .button-column {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            float: right;
+            margin-right: 50px;
+        }
+
+        .additional-buttons {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .additional-buttons button + button {
+            margin-top: 20px;
+        }
+
         #prevButton {
             background-color: #323232;
             border: 1px solid #8a8a8a;
@@ -104,6 +122,24 @@
         }
 
         #highlightLinesButton:hover {
+            background-color: #007ede;
+        }
+
+        #giveHintButton {
+            background-color: #0078d4;
+            border: none;
+        }
+
+        #giveHintButton:hover {
+            background-color: #007ede;
+        }
+
+        #showSolutionButton {
+            background-color: #0078d4;
+            border: none;
+        }
+
+        #showSolutionButton:hover {
             background-color: #007ede;
         }
 
@@ -150,19 +186,26 @@
 
     </style>
     </head>
-    <body data-item-label="{{LABEL}}" data-has-file="{{HAS_FILE_TO_OPEN}}" style="font-family: sans-serif; padding: 1em;">
+    <body data-item-label="{{LABEL}}" data-has-file="{{HAS_FILE_TO_OPEN}}" style="font-family: sans-serif; padding: 1em;">  
         <div class="header-container">
             <div class="breadcrumbs">
                 <span class="parent-title">{{PARENT_TITLE}}</span>
                 <span class="separator">&gt;</span>
                 <span class="current-title">{{TITLE}}</span>
             </div>
+        </div>
+        <div class="button-column">
             <div class="navigation-buttons">
-                {{HIGHLIGHT_LINES_BUTTON}}
                 <button id="prevButton">Previous</button>
                 <button id="nextButton">Next</button>
             </div>
+            <div class="navigation-buttons additional-buttons">
+                {{HIGHLIGHT_LINES_BUTTON}}
+                {{GIVE_HINT_BUTTON}}
+                {{SHOW_SOLUTION_BUTTON}}
+            </div>
         </div>
+
         {{PAGINATION}}
         <h2>{{TITLE}}</h2>
         <p>{{DESCRIPTION}}</p>
@@ -230,8 +273,12 @@
 
                 const hasFileToOpen = document.body.dataset.hasFile === 'true';
                 const highlightButton = document.getElementById('highlightLinesButton');
+                const giveHintButton = document.getElementById('giveHintButton');
+                const showSolutionButton = document.getElementById('showSolutionButton');
                 if (!hasFileToOpen) {
                     highlightButton?.remove();
+                    giveHintButton?.remove();
+                    showSolutionButton?.remove();
                 }
 
                 if (highlightButton) {
