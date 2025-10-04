@@ -314,14 +314,9 @@
                 });
 
                 document.getElementById('cloneButton').addEventListener('click', () => {
-
-                    const cloneButton = document.getElementById('cloneButton');
-                    const repoName = cloneButton.getAttribute('data-repo-name');
-
                     vscode.postMessage({
                         command: 'cloneProject',
-                        label: currentItemLabel,
-                        repoName: repoName
+                        label: currentItemLabel
                     });
                 });
             });

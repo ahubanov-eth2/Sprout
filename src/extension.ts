@@ -11,6 +11,11 @@ let currentPanel: vscode.WebviewPanel | undefined;
 let onDidEndTaskDisposable: vscode.Disposable | undefined;
 let activeFileUri: vscode.Uri | undefined;
 
+let repoName: string | undefined;
+let url: string | undefined;
+let commit: string | undefined;
+let parent_commit: string | undefined;
+
 const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
 });
@@ -49,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
                         vscode.commands.executeCommand('sprout.goToPrevItem', message.label);
                         break;
                     case 'cloneProject':
-                        vscode.commands.executeCommand('sprout.cloneProject', message.label, message.repoName);
+                        vscode.commands.executeCommand('sprout.cloneProject', message.label);
                         break;
                     case 'highlightLinesHint':
                         vscode.commands.executeCommand('sprout.highlightLinesHint', message.label);
@@ -135,13 +140,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string, repoName: string) => {
+  const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string) => {
       const currentItem = leftProvider.findLeafByLabel(label);
       if (currentItem && currentItem.metaDataPath) {
           try {
-              let repoName = "repo";
-              let url = "url";
-              let commit = "commit";
               if (fs.existsSync(currentItem.metaDataPath)) {
                 try {
                     const jsonContent = fs.readFileSync(currentItem.metaDataPath, 'utf8');
@@ -149,12 +151,13 @@ export function activate(context: vscode.ExtensionContext) {
                     repoName = data.repo_name;
                     url = data.url;
                     commit = data.commit;
+                    parent_commit = data.parent_commit;
                 } catch (error) {
                     console.error('Error reading or parsing the JSON file:', error);
                 }
               }
               const baseDestination = path.join(os.homedir(), 'open-source-projects');
-              const destination = path.join(baseDestination, repoName);
+              const destination = path.join(baseDestination, repoName as string);
 
               if (fs.existsSync(destination)) {
                   vscode.window.showInformationMessage('Project already cloned.');
@@ -165,7 +168,7 @@ export function activate(context: vscode.ExtensionContext) {
               const fullCommand = 
                   `git clone "${url}" "${destination}" && ` +
                   `cd "${destination}" && ` +
-                  `git checkout "${commit}" && ` +
+                  `git checkout "${parent_commit}" && ` +
                   `cd "webapp"`;
                   // TODO: make the cd "webapp" generic
                   // TODO: add npm install here somehow
@@ -200,22 +203,22 @@ export function activate(context: vscode.ExtensionContext) {
       }
   });
 
-  const showSolutionDisposable = vscode.commands.registerCommand('sprout.showSolution', async () => {
+  const showSolutionDisposable = vscode.commands.registerCommand('sprout.showSolution', async (label: string) => {
       if (!activeFileUri) {
           vscode.window.showWarningMessage('No active code editor found.');
           return;
       }
-
-      const startLine = 0;
-      const endLine = 20;
-
-      const solutionCommit = '632b231283';
+      
+      const currentItem = leftProvider.findLeafByLabel(label);
+      const lineRanges = await getListOfLineRanges(currentItem?.fileWithLines as string)
+      const startLine = lineRanges[0][0] - 1
+      const endLine = lineRanges[lineRanges.length - 1][1] 
 
       const repoPath = fileProvider.getRepoPath() as string;
-      const actualRepoPath = path.join(repoPath, 'mattermost');
+      const actualRepoPath = path.join(repoPath, repoName as string);
       const relativeFilePath = path.relative(actualRepoPath, activeFileUri.fsPath);
 
-      const solutionCommand = `git --git-dir=${path.join(actualRepoPath, '.git')} show ${solutionCommit}:${relativeFilePath}`;
+      const solutionCommand = `git --git-dir=${path.join(actualRepoPath, '.git')} show ${commit}:${relativeFilePath}`;
       const currentCommand = `cat ${path.join(actualRepoPath, relativeFilePath)}`;
 
       let solutionContent: string;
@@ -315,6 +318,24 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
+function getListOfLineRanges(filePath: string): number[][] {
+  try {
+    const fileContent = fs.readFileSync(filePath, 'utf8');
+    const lines = fileContent.trim().split(/\r?\n/).slice(1);
+
+    const allPairs: number[][] = lines.map(line => {
+      const parts = line.split(',');
+      return [Number(parts[0]), Number(parts[1])];
+    });
+
+    return allPairs;
+  } catch (error) {
+    console.error('Error reading or processing the file:', error);
+    return [];
+  }
+}
+
+
 function getWebviewContent(
   extensionPath: string, 
   item: any, 
@@ -361,7 +382,7 @@ function getWebviewContent(
     let cloneButtonHtml = '';
     if (item.metaDataPath) {
         cloneButtonHtml = `
-            <button id="cloneButton" data-repo-name="${item.repoName}">
+            <button id="cloneButton">
                 Clone Project
             </button>
         `;

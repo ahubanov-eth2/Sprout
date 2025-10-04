@@ -71,7 +71,9 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
 
         let fileToOpen: string | undefined;
         if (fs.existsSync(filepathTextPath)) {
-            fileToOpen = fs.readFileSync(filepathTextPath, 'utf8').trim();
+            const content = fs.readFileSync(filepathTextPath, 'utf8');
+            const firstLine = content.split(/\r?\n/)[0];
+            fileToOpen = firstLine.trim();
         }
       
         return new Section(
@@ -83,7 +85,8 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
           fs.existsSync(metadataPath) ? metadataPath : undefined,
           undefined,
           fs.existsSync(metadataPath) ? repoName : undefined,
-          fileToOpen
+          fileToOpen,
+          filepathTextPath
         );
 
     } else {
@@ -205,7 +208,8 @@ export class Section extends vscode.TreeItem {
     public readonly metaDataPath?: string,
     public readonly clonePath?: string,
     public readonly repoName?: string,
-    public readonly fileToOpen?: string 
+    public readonly fileToOpen?: string,
+    public readonly fileWithLines? : string 
   ) {
     super(label, collapsibleState);
     this.iconPath = new vscode.ThemeIcon(iconName);
