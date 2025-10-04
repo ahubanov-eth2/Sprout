@@ -271,7 +271,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
   })
 
-  const highlightLinesDisposable = vscode.commands.registerCommand('sprout.highlightLinesHint', async () => {
+  const highlightLinesDisposable = vscode.commands.registerCommand('sprout.highlightLinesHint', async (label: string) => {
       if (!activeFileUri) {
           vscode.window.showWarningMessage('No active code editor found.');
           return;
@@ -286,13 +286,23 @@ export function activate(context: vscode.ExtensionContext) {
           return;
       }
 
-      const line11 = codeEditor.document.lineAt(10);
-      const line26 = codeEditor.document.lineAt(25);
+      const currentItem = leftProvider.findLeafByLabel(label);
+      let lineRanges = await getListOfLineRanges(currentItem?.fileWithLines as string);
 
-      const linesToHighlight = [
-          line11.range,
-          line26.range
-      ];
+      const linesToHighlight = (lineRanges || []).map((range: number[]) => {
+        const [startLine, endLine] = range;
+
+        const lineRangeInstance = new vscode.Range(
+          startLine - 1, 
+          0, 
+          endLine - 2, // TODO: figure out correct indexing
+          1000000 
+        );
+
+        return {
+          range: lineRangeInstance
+        };
+      });
 
       codeEditor.setDecorations(hintDecorationType, linesToHighlight);
       setTimeout(() => {
