@@ -19,6 +19,15 @@ let parent_commit: string | undefined;
 const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
 });
+const projectsDirectory = path.join(os.homedir(), 'open-source-projects');
+
+interface ConfigData {
+  setupData? : any,
+  taskDescriptionFile? : string,
+  codeFileToEdit? : string,
+  hintLineRanges? : Array<[number, number]>,
+  hint? : string
+}
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -28,12 +37,11 @@ export function activate(context: vscode.ExtensionContext) {
   const fileProvider = new FileTreeDataProvider();
   vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
 
-  const destinationPath = path.join(os.homedir(), 'test-clone');
-  if (fs.existsSync(destinationPath)) {
-      fileProvider.setRepoPath(destinationPath);
+  if (fs.existsSync(projectsDirectory)) {
+      fileProvider.setRepoPath(projectsDirectory);
   }
 
-  function createOrRevealPanel(){
+  function revealPanel(){
     if (currentPanel) {
         currentPanel.reveal(vscode.ViewColumn.One, true);
     } else {
@@ -77,22 +85,29 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  const disposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
+  const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
     
     const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
     const parent = leftProvider.findParent(leftProvider.getRoot(), item);
     const parentLabel = (parent !== undefined) ? parent.label : ""
 
-    let isFileOpen = false;
-    if (item.fileToOpen) {
-      const clonedRepoPath = fileProvider.getRepoPath();
-      if (clonedRepoPath) {
-          const fileUri = vscode.Uri.file(path.join(clonedRepoPath, item.fileToOpen));
+    let configData: ConfigData = {};
+    if (item.configFilePath)
+    {
+      const config = fs.readFileSync(item.configFilePath, "utf8");
+      configData = JSON.parse(config);
+    }
+
+    let isCodeFileOpen = false;
+    if (configData.codeFileToEdit) {
+      const repoDirectory = fileProvider.getRepoPath();
+      if (repoDirectory) {
+          const fileUri = vscode.Uri.file(path.join(repoDirectory, configData.codeFileToEdit));
           try {
               const doc = await vscode.workspace.openTextDocument(fileUri);
-              const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+              await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
               activeFileUri = fileUri; 
-              isFileOpen = true;
+              isCodeFileOpen = true;
           } catch (error) {
               vscode.window.showErrorMessage(`Could not open file: ${fileUri}`);
           }
@@ -106,10 +121,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     await vscode.commands.executeCommand('workbench.action.closePanel');
-    vscode.commands.executeCommand('setContext', 'sprout.hasClonedRepo', isFileOpen);
-    createOrRevealPanel();
+    vscode.commands.executeCommand('setContext', 'sprout.hasClonedRepo', isCodeFileOpen);
+    revealPanel();
 
-    if (isFileOpen && currentPanel) {
+    if (isCodeFileOpen && currentPanel) {
       await vscode.commands.executeCommand('workbench.action.splitEditorToBelowGroup');
     }
 
@@ -117,7 +132,7 @@ export function activate(context: vscode.ExtensionContext) {
         updatePanelContent(currentPanel, item, context, siblings, currentIndex, parentLabel);
     }
   });
-  context.subscriptions.push(disposable);
+  context.subscriptions.push(sectionSelectedDisposable);
 
   const nextItemDisposable = vscode.commands.registerCommand('sprout.goToNextItem', (label: string) => {
     const currentItem = leftProvider.findLeafByLabel(label);
@@ -145,26 +160,27 @@ export function activate(context: vscode.ExtensionContext) {
 
   const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string) => {
       const currentItem = leftProvider.findLeafByLabel(label);
-      if (currentItem && currentItem.metaDataPath) {
+
+      let configData: ConfigData = {};
+      if (currentItem && currentItem.configFilePath)
+      {
+        const config = fs.readFileSync(currentItem.configFilePath, "utf8");
+        configData = JSON.parse(config);
+      }
+
+      if (configData.setupData) {
           try {
-              if (fs.existsSync(currentItem.metaDataPath)) {
-                try {
-                    const jsonContent = fs.readFileSync(currentItem.metaDataPath, 'utf8');
-                    const data = JSON.parse(jsonContent);
-                    repoName = data.repo_name;
-                    url = data.url;
-                    commit = data.commit;
-                    parent_commit = data.parent_commit;
-                } catch (error) {
-                    console.error('Error reading or parsing the JSON file:', error);
-                }
-              }
-              const baseDestination = path.join(os.homedir(), 'open-source-projects');
-              const destination = path.join(baseDestination, repoName as string);
+              const data = configData.setupData
+              repoName = data.repo_name;
+              url = data.url;
+              commit = data.commit;
+              parent_commit = data.parent_commit;
+              
+              const destination = path.join(projectsDirectory, repoName as string);
 
               if (fs.existsSync(destination)) {
                   vscode.window.showInformationMessage('Project already cloned.');
-                  fileProvider.setRepoPath(baseDestination);
+                  fileProvider.setRepoPath(projectsDirectory);
                   return;
               }
 
@@ -190,12 +206,10 @@ export function activate(context: vscode.ExtensionContext) {
                   panel: vscode.TaskPanelKind.Shared
               };
 
-              // vscode.commands.executeCommand('workbench.action.positionPanelRight');
-
               onDidEndTaskDisposable = vscode.tasks.onDidEndTask(e => {
                   if (e.execution.task.name === `Cloning ${repoName}`) {
                       vscode.window.showInformationMessage('Task ended.');
-                      fileProvider.setRepoPath(baseDestination);
+                      fileProvider.setRepoPath(projectsDirectory);
                   }
               });
 
@@ -213,7 +227,16 @@ export function activate(context: vscode.ExtensionContext) {
       }
       
       const currentItem = leftProvider.findLeafByLabel(label);
-      const lineRanges = await getListOfLineRanges(currentItem?.fileWithLines as string)
+
+      let configData: ConfigData = {};
+      if (currentItem && currentItem.configFilePath)
+      {
+        const config = fs.readFileSync(currentItem.configFilePath, "utf8");
+        configData = JSON.parse(config);
+      }
+
+      const lineRanges = configData.hintLineRanges as [number, number][] 
+
       const startLine = lineRanges[0][0] - 1
       const endLine = lineRanges[lineRanges.length - 1][1] 
 
@@ -290,7 +313,15 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       const currentItem = leftProvider.findLeafByLabel(label);
-      let lineRanges = await getListOfLineRanges(currentItem?.fileWithLines as string);
+
+      let configData: ConfigData = {};
+      if (currentItem && currentItem.configFilePath)
+      {
+        const config = fs.readFileSync(currentItem.configFilePath, "utf8");
+        configData = JSON.parse(config);
+      }
+
+      const lineRanges = configData.hintLineRanges as [number, number][] 
 
       const linesToHighlight = (lineRanges || []).map((range: number[]) => {
         const [startLine, endLine] = range;
@@ -324,23 +355,27 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.executeCommand('sprout.highlightLinesHint', label);
     
     const currentItem = leftProvider.findLeafByLabel(label);
-    const filePath = currentItem?.hintFile; 
 
-    if (!filePath) {
-        vscode.window.showWarningMessage(`No hint file found for item: ${label}`);
+    let configData: ConfigData = {};
+    if (currentItem && currentItem.configFilePath)
+    {
+      const config = fs.readFileSync(currentItem.configFilePath, "utf8");
+      configData = JSON.parse(config);
+    }
+
+    const hintText = configData.hint; 
+    if (!hintText) {
+        vscode.window.showWarningMessage(`No hint file found for section: ${label}`);
         return;
     }
 
     try {
-        const fileContentBuffer = fs.readFileSync(filePath);
-        const fileContentText = fileContentBuffer.toString('utf8');
-
-        if (currentPanel) {
-            currentPanel.webview.postMessage({
-                command: 'displayHintText',
-                text: fileContentText
-            });
-        }
+      if (currentPanel) {
+        currentPanel.webview.postMessage({
+            command: 'displayHintText',
+            text: hintText
+        });
+      }
     } catch (e) {
         vscode.window.showErrorMessage(`Error reading hint file: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -358,23 +393,6 @@ export function activate(context: vscode.ExtensionContext) {
     showHintPopupDisposable, 
     hintDecorationType
   );
-}
-
-function getListOfLineRanges(filePath: string): number[][] {
-  try {
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    const lines = fileContent.trim().split(/\r?\n/).slice(1);
-
-    const allPairs: number[][] = lines.map(line => {
-      const parts = line.split(',');
-      return [Number(parts[0]), Number(parts[1])];
-    });
-
-    return allPairs;
-  } catch (error) {
-    console.error('Error reading or processing the file:', error);
-    return [];
-  }
 }
 
 
@@ -404,12 +422,18 @@ function getWebviewContent(
     htmlContent = htmlContent.replace('{{PAGINATION}}', paginationHtml);
     htmlContent = htmlContent.replace(/{{TITLE}}/g, item.label)
 
-    let description = '';
-    if (item.filePath)
+    let configData: ConfigData = {};
+    if (item && item.configFilePath)
     {
-      const markdownPath = item.filePath;
+      const config = fs.readFileSync(item.configFilePath, "utf8");
+      configData = JSON.parse(config);
+    }
+
+    let description = '';
+    if (configData.taskDescriptionFile)
+    {
       try {
-          const markdownContent = fs.readFileSync(markdownPath, 'utf8');
+          const markdownContent = fs.readFileSync(configData.taskDescriptionFile, 'utf8');
           description = marked.parse(markdownContent) as string;
       } catch (error) {
           description = `Failed to load content for ${item.label}.`;
@@ -422,7 +446,7 @@ function getWebviewContent(
     }
 
     let cloneButtonHtml = '';
-    if (item.metaDataPath) {
+    if (configData.setupData) {
         cloneButtonHtml = `
             <button id="cloneButton">
                 Clone Project
@@ -455,7 +479,7 @@ function getWebviewContent(
     htmlContent = htmlContent.replace('{{HIGHLIGHT_LINES_BUTTON}}', highlightLinesHtml);
     htmlContent = htmlContent.replace('{{GIVE_HINT_BUTTON}}', giveHintHtml);
     htmlContent = htmlContent.replace('{{SHOW_SOLUTION_BUTTON}}', showSolutionHtml);
-    htmlContent = htmlContent.replace('{{HAS_FILE_TO_OPEN}}', item.fileToOpen ? 'true' : 'false');
+    htmlContent = htmlContent.replace('{{HAS_FILE_TO_OPEN}}', configData.codeFileToEdit ? 'true' : 'false');
 
     return htmlContent;
 }

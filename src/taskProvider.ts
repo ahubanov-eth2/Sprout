@@ -37,9 +37,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
   private async loadSection(sectionPath: string): Promise<Section> {
     const lessonInfoPath = path.join(sectionPath, 'lesson-info.yaml');
     const taskInfoPath = path.join(sectionPath, 'task-info.yaml');
-    const metadataPath = path.join(sectionPath, 'metadata.json');
-    const filepathTextPath = path.join(sectionPath, 'filepath.txt');
-    const hintFilePath = path.join(sectionPath, 'hint.txt');
+    const configFilePath = path.join(sectionPath, 'config.json');
 
     let metaData: any;
     let children: Section[] | undefined;
@@ -54,54 +52,29 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
             metaData.content.map((childDir: string) => this.loadSection(path.join(sectionPath, childDir)))
         );
         collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+
+        return new Section(
+          metaData.custom_name,
+          children,
+          collapsibleState,
+          "file-directory"
+        );
     } else if (fs.existsSync(taskInfoPath)) {
         
         const taskInfoContent = fs.readFileSync(taskInfoPath, 'utf8');
         metaData = yaml.load(taskInfoContent) as any;
-
-        let repoName = 'project';
-        if (fs.existsSync(metadataPath)) {
-          try {
-              const jsonContent = fs.readFileSync(metadataPath, 'utf8');
-              const data = JSON.parse(jsonContent);
-              repoName = data.repo_name;
-          } catch (error) {
-              console.error('Error reading or parsing the JSON file:', error);
-          }
-        }
-
-        let fileToOpen: string | undefined;
-        if (fs.existsSync(filepathTextPath)) {
-            const content = fs.readFileSync(filepathTextPath, 'utf8');
-            const firstLine = content.split(/\r?\n/)[0];
-            fileToOpen = firstLine.trim();
-        }
       
         return new Section(
           metaData.custom_name,
           children,
           collapsibleState,
           "book",
-          path.join(sectionPath, "task.md"),
-          fs.existsSync(metadataPath) ? metadataPath : undefined,
-          undefined,
-          fs.existsSync(metadataPath) ? repoName : undefined,
-          fileToOpen,
-          filepathTextPath,
-          hintFilePath
+          configFilePath && configFilePath
         );
 
     } else {
         throw new Error(`YAML info file not found for section at: ${sectionPath}`);
     }
-
-    return new Section(
-      metaData.custom_name,
-      children,
-      collapsibleState,
-      "file-directory",
-      metaData.file
-    );
   }
 
   getTreeItem(element: Section | vscode.TreeItem): vscode.TreeItem {
@@ -206,13 +179,7 @@ export class Section extends vscode.TreeItem {
     public readonly children: Section[] | undefined,
     collapsibleState: vscode.TreeItemCollapsibleState,
     iconName: string,
-    public readonly filePath? : string,
-    public readonly metaDataPath?: string,
-    public readonly clonePath?: string,
-    public readonly repoName?: string,
-    public readonly fileToOpen?: string,
-    public readonly fileWithLines? : string, 
-    public readonly hintFile? : string
+    public readonly configFilePath?: string
   ) {
     super(label, collapsibleState);
     this.iconPath = new vscode.ThemeIcon(iconName);
