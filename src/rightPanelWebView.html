@@ -8,6 +8,30 @@
             line-height: 1.5;
         }
 
+        /* New CSS for the Popup */
+        .hint-popup {
+            position: absolute;
+            top: 0;
+            right: 100%; /* Position it to the left of the button's container */
+            margin-right: 10px; /* Spacing between button and popup */
+            background-color: var(--vscode-editor-background); /* Use VS Code background variable */
+            color: var(--vscode-editor-foreground); /* Use VS Code foreground variable */
+            border: 1px solid var(--vscode-editorGroup-border);
+            padding: 15px;
+            width: 300px; /* Fixed width for better readability */
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            display: none; /* Hidden by default */
+            border-radius: 4px;
+        }
+
+        .hint-popup-content {
+            /* Basic text styling inside the popup */
+            white-space: pre-wrap; /* Preserves formatting (newlines) from the file */
+        }
+
         .header-container {
             display: flex; 
             justify-content: flex-start; 
@@ -206,6 +230,10 @@
             </div>
         </div>
 
+        <div id="hintPopup" class="hint-popup">
+            <div id="hintPopupContent" class="hint-popup-content"></div>
+        </div>
+
         {{PAGINATION}}
         <h2>{{TITLE}}</h2>
         <p>{{DESCRIPTION}}</p>
@@ -299,6 +327,27 @@
                     });
                 }
 
+                if (giveHintButton) {
+                    giveHintButton.addEventListener('click', () => {
+                        giveHintButton.setAttribute('data-clicked', 'true'); 
+                        vscode.postMessage({
+                            command: 'getHintText',
+                            label: currentItemLabel
+                        });
+                    });
+                }
+
+                window.addEventListener('message', event => {
+                    const message = event.data;
+                    if (message.command === 'displayHintText' && message.text) {
+                        const clickedButton = document.querySelector('[data-clicked="true"]');
+                        if (clickedButton) {
+                            showPopup(clickedButton, message.text);
+                            clickedButton.removeAttribute('data-clicked');
+                        }
+                    }
+                });
+
                 document.getElementById('nextButton').addEventListener('click', () => {
                     vscode.postMessage({
                         command: 'nextItem',
@@ -320,6 +369,31 @@
                     });
                 });
             });
+
+            function showPopup(buttonElement, text) {
+                const popup = document.getElementById('hintPopup');
+                const content = document.getElementById('hintPopupContent');
+                
+                content.textContent = text;
+                popup.style.display = 'block';
+
+                const buttonRect = buttonElement.getBoundingClientRect();
+                const bodyRect = document.body.getBoundingClientRect();
+                
+                popup.style.top = `${buttonRect.top - bodyRect.top}px`;
+                popup.style.right = `${document.body.clientWidth - buttonRect.left + 10}px`;
+                
+                const dismissListener = (e) => {
+                    if (!popup.contains(e.target) && e.target !== buttonElement) {
+                        popup.style.display = 'none';
+                        document.removeEventListener('click', dismissListener);
+                    }
+                };
+                setTimeout(() => {
+                    document.addEventListener('click', dismissListener);
+                }, 10);
+            }
+
         </script>
 
     </body>

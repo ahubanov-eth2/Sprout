@@ -39,6 +39,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
     const taskInfoPath = path.join(sectionPath, 'task-info.yaml');
     const metadataPath = path.join(sectionPath, 'metadata.json');
     const filepathTextPath = path.join(sectionPath, 'filepath.txt');
+    const hintFilePath = path.join(sectionPath, 'hint.txt');
 
     let metaData: any;
     let children: Section[] | undefined;
@@ -86,7 +87,8 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
           undefined,
           fs.existsSync(metadataPath) ? repoName : undefined,
           fileToOpen,
-          filepathTextPath
+          filepathTextPath,
+          hintFilePath
         );
 
     } else {
@@ -209,7 +211,8 @@ export class Section extends vscode.TreeItem {
     public readonly clonePath?: string,
     public readonly repoName?: string,
     public readonly fileToOpen?: string,
-    public readonly fileWithLines? : string 
+    public readonly fileWithLines? : string, 
+    public readonly hintFile? : string
   ) {
     super(label, collapsibleState);
     this.iconPath = new vscode.ThemeIcon(iconName);

@@ -62,6 +62,9 @@ export function activate(context: vscode.ExtensionContext) {
                     case 'showSolution':
                         vscode.commands.executeCommand('sprout.showSolution', message.label);
                         break;
+                    case 'getHintText':
+                        vscode.commands.executeCommand('sprout.showHintPopup', message.label);
+                        break;
                 }
             },
             undefined,
@@ -317,13 +320,42 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showTextDocument(uri);
   })
 
+  const showHintPopupDisposable = vscode.commands.registerCommand('sprout.showHintPopup', async (label: string) => {
+    vscode.commands.executeCommand('sprout.highlightLinesHint', label);
+    
+    const currentItem = leftProvider.findLeafByLabel(label);
+    const filePath = currentItem?.hintFile; 
+
+    if (!filePath) {
+        vscode.window.showWarningMessage(`No hint file found for item: ${label}`);
+        return;
+    }
+
+    try {
+        const fileContentBuffer = fs.readFileSync(filePath);
+        const fileContentText = fileContentBuffer.toString('utf8');
+
+        if (currentPanel) {
+            currentPanel.webview.postMessage({
+                command: 'displayHintText',
+                text: fileContentText
+            });
+        }
+    } catch (e) {
+        vscode.window.showErrorMessage(`Error reading hint file: ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+
+  })
+
   context.subscriptions.push(
     nextItemDisposable, 
     prevItemDisposable, 
     cloneProjectDisposable, 
     openFileDisposable, 
     showSolutionDisposable,
-    highlightLinesDisposable, 
+    highlightLinesDisposable,
+    showHintPopupDisposable, 
     hintDecorationType
   );
 }
