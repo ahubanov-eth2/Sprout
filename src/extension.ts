@@ -19,7 +19,6 @@ let parent_commit: string | undefined;
 const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
 });
-const projectsDirectory = path.join(os.homedir(), 'open-source-projects');
 
 interface ConfigData {
   setupData? : any,
@@ -30,6 +29,8 @@ interface ConfigData {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+
+  const projectsDirectory = path.join(context.extensionPath, "data", "project-repository");
 
   const leftProvider = new TaskProvider(context);
   vscode.window.registerTreeDataProvider('leftView', leftProvider);
