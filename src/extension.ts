@@ -433,7 +433,8 @@ function getWebviewContent(
     if (configData.taskDescriptionFile)
     {
       try {
-          const markdownContent = fs.readFileSync(configData.taskDescriptionFile, 'utf8');
+          const fullTaskDescriptionFilePath = path.join(extensionPath, "data", "structured-courses", configData.taskDescriptionFile);
+          const markdownContent = fs.readFileSync(fullTaskDescriptionFilePath, 'utf8');
           description = marked.parse(markdownContent) as string;
       } catch (error) {
           description = `Failed to load content for ${item.label}.`;
