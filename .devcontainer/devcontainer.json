@@ -2,7 +2,7 @@
   "extensions": [
     "./sprout-0.0.1.vsix"
   ],
-  "postCreateCommand": "git submodule update --init --recursive",
+  "postCreateCommand": "git config --global url.\"https://x-access-token:${GITHUB_TOKEN}@github.com/\".insteadOf \"ssh://git@github.com/\" && git submodule update --init --recursive",
   "customizations": {
     "codespaces": {
       "repositories": {
