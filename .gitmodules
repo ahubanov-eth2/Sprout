@@ -1,0 +1,3 @@
+[submodule "data/structured-courses"]
+	path = data/structured-courses
+	url = git@github.com:ahubanov-eth2/sprout-example-courses.git

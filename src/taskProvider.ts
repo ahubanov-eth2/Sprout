@@ -16,7 +16,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
   }
 
   private async loadData() {
-    const coursePath = path.join(this.extensionPath, 'courses', 'task1');
+    const coursePath = path.join(this.extensionPath, 'data', 'structured-courses', 'task1');
     
     const rootMetaPath = path.join(coursePath, 'course-info.yaml');
     const rootMetaContent = fs.readFileSync(rootMetaPath, 'utf8');
