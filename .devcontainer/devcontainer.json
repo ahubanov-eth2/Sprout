@@ -3,7 +3,6 @@
     "./sprout-0.0.1.vsix"
   ],
   "postCreateCommand": "git config --global url.\"https://x-access-token:${GITHUB_TOKEN}@github.com/\".insteadOf \"git@github.com:\" && git submodule update --init --recursive && export DYNAMIC_REPO_PATH=${DYNAMIC_REPO_PATH:-mattermost/mattermost} && git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${DYNAMIC_REPO_PATH}.git data/project-repository",
-  "postAttachCommand": "sleep 5 && code --debug .",
   "customizations": {
     "codespaces": {
       "repositories": {
