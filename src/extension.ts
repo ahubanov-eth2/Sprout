@@ -11,7 +11,7 @@ let currentPanel: vscode.WebviewPanel | undefined;
 let onDidEndTaskDisposable: vscode.Disposable | undefined;
 let activeFileUri: vscode.Uri | undefined;
 
-let commit: string | undefined;
+const COMMIT: string | undefined = process.env.COMMIT;
 
 const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
@@ -176,7 +176,7 @@ export function activate(context: vscode.ExtensionContext) {
       const repoPath = fileProvider.getRepoPath() as string;
       const relativeFilePath = path.relative(repoPath, activeFileUri.fsPath);
 
-      const solutionCommand = `git --git-dir=${path.join(repoPath, '.git')} show ${commit}:${relativeFilePath}`;
+      const solutionCommand = `git --git-dir=${path.join(repoPath, '.git')} show ${COMMIT}:${relativeFilePath}`;
       const currentCommand = `cat ${path.join(repoPath, relativeFilePath)}`;
 
       let solutionContent: string;
