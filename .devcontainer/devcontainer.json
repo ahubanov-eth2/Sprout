@@ -36,7 +36,7 @@
 			}
 		}
 	},
-	"remoteEnv": {
+	"containerEnv": {
         "COMMIT": "${COMMIT:-603c26a5bcda365917285b8f32c6982e170c5cd3}"
     }
 }
