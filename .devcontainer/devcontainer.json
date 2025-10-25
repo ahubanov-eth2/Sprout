@@ -1,25 +1,25 @@
 {
 	"name": "Sprout (Node.js & TypeScript)",
-	// "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
-	// "features": {
-	// 	"ghcr.io/devcontainers/features/node:1": {
-	// 		"nodeGypDependencies": true,
-	// 		"installYarnUsingApt": true,
-	// 		"version": "lts",
-	// 		"pnpmVersion": "latest",
-	// 		"nvmVersion": "latest"
-	// 	},
-	// 	"ghcr.io/jayree/devcontainer-features/npm-registry:1": {
-	// 		"registry": "@SCOPE:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${localEnv:GITHUB_TOKEN}"
-	// 	},
-	// 	"ghcr.io/devcontainers-extra/features/npm-package:1": {
-	// 		"package": "typescript",
-	// 		"version": "latest"
-	// 	},
-	// 	"ghcr.io/devcontainers-extra/features/npm-packages:1": {
-	// 		"packages": "eslint@9.20.1,nodemon,prettier@3.5.2"
-	// 	}
-	// },
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {
+			"nodeGypDependencies": true,
+			"installYarnUsingApt": true,
+			"version": "lts",
+			"pnpmVersion": "latest",
+			"nvmVersion": "latest"
+		},
+		"ghcr.io/jayree/devcontainer-features/npm-registry:1": {
+			"registry": "@SCOPE:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${localEnv:GITHUB_TOKEN}"
+		},
+		"ghcr.io/devcontainers-extra/features/npm-package:1": {
+			"package": "typescript",
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers-extra/features/npm-packages:1": {
+			"packages": "eslint@9.20.1,nodemon,prettier@3.5.2"
+		}
+	},
 	"postCreateCommand": [
 		".devcontainer/setup.sh"
 	],
