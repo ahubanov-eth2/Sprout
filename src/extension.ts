@@ -62,9 +62,6 @@ export function activate(context: vscode.ExtensionContext) {
                     case 'prevItem':
                         vscode.commands.executeCommand('sprout.goToPrevItem', message.label);
                         break;
-                    case 'cloneProject':
-                        vscode.commands.executeCommand('sprout.cloneProject', message.label);
-                        break;
                     case 'highlightLinesHint':
                         vscode.commands.executeCommand('sprout.highlightLinesHint', message.label);
                         break;
@@ -157,68 +154,6 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('You are at the start of the list.');
       }
     }
-  });
-
-  const cloneProjectDisposable = vscode.commands.registerCommand('sprout.cloneProject', (label: string) => {
-      const currentItem = leftProvider.findLeafByLabel(label);
-
-      let configData: ConfigData = {};
-      if (currentItem && currentItem.configFilePath)
-      {
-        const config = fs.readFileSync(currentItem.configFilePath, "utf8");
-        configData = JSON.parse(config);
-      }
-
-      if (configData.setupData) {
-          try {
-              const data = configData.setupData
-              repoName = data.repo_name;
-              url = data.url;
-              commit = data.commit;
-              parent_commit = data.parent_commit;
-              
-              const destination = path.join(projectsDirectory, repoName as string);
-
-              if (fs.existsSync(destination)) {
-                  vscode.window.showInformationMessage('Project already cloned.');
-                  fileProvider.setRepoPath(projectsDirectory);
-                  return;
-              }
-
-              const fullCommand = 
-                  `git clone "${url}" "${destination}" && ` +
-                  `cd "${destination}" && ` +
-                  `git checkout "${parent_commit}" && ` +
-                  `cd "webapp"`;
-                  // TODO: make the cd "webapp" generic
-                  // TODO: add npm install here somehow
-
-              const shellExecution = new vscode.ShellExecution(fullCommand);
-              const task = new vscode.Task(
-                  { type: 'sprout-clone', name: `Cloning ${repoName}` },
-                  vscode.TaskScope.Workspace,
-                  `Cloning ${repoName}`,
-                  'Sprout',
-                  shellExecution
-              );
-
-              task.presentationOptions = {
-                  reveal: vscode.TaskRevealKind.Always,
-                  panel: vscode.TaskPanelKind.Shared
-              };
-
-              onDidEndTaskDisposable = vscode.tasks.onDidEndTask(e => {
-                  if (e.execution.task.name === `Cloning ${repoName}`) {
-                      vscode.window.showInformationMessage('Task ended.');
-                      fileProvider.setRepoPath(projectsDirectory);
-                  }
-              });
-
-              vscode.tasks.executeTask(task);
-          } catch (error: any) {
-              vscode.window.showErrorMessage(`Failed to start command execution: ${error.message}`);
-          }
-      }
   });
 
   const showSolutionDisposable = vscode.commands.registerCommand('sprout.showSolution', async (label: string) => {
@@ -387,7 +322,6 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     nextItemDisposable, 
     prevItemDisposable, 
-    cloneProjectDisposable, 
     openFileDisposable, 
     showSolutionDisposable,
     highlightLinesDisposable,
@@ -447,17 +381,7 @@ function getWebviewContent(
       description = `Description of <strong>${item.label}</strong>.`;
     }
 
-    let cloneButtonHtml = '';
-    if (configData.setupData) {
-        cloneButtonHtml = `
-            <button id="cloneButton">
-                Clone Project
-            </button>
-        `;
-    }
-
     htmlContent = htmlContent.replace('{{DESCRIPTION}}', description);
-    htmlContent = htmlContent.replace('{{CLONE_BUTTON}}', cloneButtonHtml);
     htmlContent = htmlContent.replace('{{LABEL}}', item.label);
 
     let highlightLinesHtml = `

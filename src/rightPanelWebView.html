@@ -130,16 +130,6 @@
             background-color: #007ede;
         }
 
-        #cloneButton {
-            margin-top: 10px;
-            background-color: #0078d4;
-            border: none;
-        }
-
-        #cloneButton:hover {
-            background-color: #007ede;
-        }
-
         #highlightLinesButton {
             background-color: #0078d4;
             border: none;
@@ -237,10 +227,6 @@
         {{PAGINATION}}
         <h2>{{TITLE}}</h2>
         <p>{{DESCRIPTION}}</p>
-
-        <div class="navigation-buttons">
-            {{CLONE_BUTTON}}
-        </div>
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
@@ -358,13 +344,6 @@
                 document.getElementById('prevButton').addEventListener('click', () => {
                     vscode.postMessage({
                         command: 'prevItem',
-                        label: currentItemLabel
-                    });
-                });
-
-                document.getElementById('cloneButton').addEventListener('click', () => {
-                    vscode.postMessage({
-                        command: 'cloneProject',
                         label: currentItemLabel
                     });
                 });
