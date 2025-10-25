@@ -23,6 +23,7 @@
 	"postCreateCommand": [
 		".devcontainer/setup.sh"
 	],
+	"postAttachCommand": "code --install-extension /workspaces/Sprout/sprout-0.0.1.vsix",
 	"customizations": {
 		"codespaces": {
 			"repositories": {
@@ -33,11 +34,6 @@
 					"permissions": "write-all" 
 				}
 			}
-		},
-		"vscode": {
-			"extensions": [
-				"../sprout-0.0.1.vsix"
-			]
 		}
 	},
 	"remoteEnv": {
