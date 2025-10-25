@@ -1,19 +1,48 @@
 {
-  "extensions": [
-    "./sprout-0.0.1.vsix"
-  ],
-  "postCreateCommand": "git config --global url.\"https://x-access-token:${GITHUB_TOKEN}@github.com/\".insteadOf \"git@github.com:\" && git submodule update --init --recursive && export DYNAMIC_REPO_PATH=${DYNAMIC_REPO_PATH:-mattermost/mattermost} && git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${DYNAMIC_REPO_PATH}.git data/project-repository",
-  "customizations": {
-    "codespaces": {
-      "repositories": {
-        "ahubanov-eth2/sprout-example-courses": {
-          "permissions": "read-all" 
-        },
-        "mattermost/mattermost": {
-          "permissions": "write-all" 
-        }
-      }
+	"name": "Sprout (Node.js & TypeScript)",
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {
+			"nodeGypDependencies": true,
+			"installYarnUsingApt": true,
+			"version": "lts",
+			"pnpmVersion": "latest",
+			"nvmVersion": "latest"
+		},
+		"ghcr.io/jayree/devcontainer-features/npm-registry:1": {
+			"registry": "@SCOPE:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${localEnv:GITHUB_TOKEN}"
+		},
+		"ghcr.io/devcontainers-extra/features/npm-package:1": {
+			"package": "typescript",
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers-extra/features/npm-packages:1": {
+			"packages": "eslint@9.20.1,nodemon,prettier@3.5.2"
+		}
+	},
+	"postCreateCommand": [
+		"git config --global url.\"https://x-access-token:${GITHUB_TOKEN}@github.com/\".insteadOf \"git@github.com:\"",
+		"git submodule update --init --recursive",
+		"export DYNAMIC_REPO_PATH=${DYNAMIC_REPO_PATH:-mattermost/mattermost}",
+		"git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${DYNAMIC_REPO_PATH}.git data/project-repository",
+		"cd data/project-repository",
+		"git checkout PARENT_COMMIT=${PARENT_COMMIT:-632b231283}",
+		"cd \"webapp\"", // TODO: make this generic 
+		"npm install" // TODO: make this generic also?
+	],
+	"customizations": {
+		"codespaces": {
+			"repositories": {
+				"ahubanov-eth2/sprout-example-courses": {
+					"permissions": "read-all" 
+				},
+				"mattermost/mattermost": {
+					"permissions": "write-all" 
+				}
+			}
+		}
+	},
+	"remoteEnv": {
+        "COMMIT": "${COMMIT:-603c26a5bcda365917285b8f32c6982e170c5cd3}"
     }
-  },
-  "name": "Sprout" 
 }

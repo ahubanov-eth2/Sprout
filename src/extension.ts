@@ -11,10 +11,7 @@ let currentPanel: vscode.WebviewPanel | undefined;
 let onDidEndTaskDisposable: vscode.Disposable | undefined;
 let activeFileUri: vscode.Uri | undefined;
 
-let repoName: string | undefined;
-let url: string | undefined;
 let commit: string | undefined;
-let parent_commit: string | undefined;
 
 const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
@@ -177,11 +174,10 @@ export function activate(context: vscode.ExtensionContext) {
       const endLine = lineRanges[lineRanges.length - 1][1] 
 
       const repoPath = fileProvider.getRepoPath() as string;
-      const actualRepoPath = path.join(repoPath, repoName as string);
-      const relativeFilePath = path.relative(actualRepoPath, activeFileUri.fsPath);
+      const relativeFilePath = path.relative(repoPath, activeFileUri.fsPath);
 
-      const solutionCommand = `git --git-dir=${path.join(actualRepoPath, '.git')} show ${commit}:${relativeFilePath}`;
-      const currentCommand = `cat ${path.join(actualRepoPath, relativeFilePath)}`;
+      const solutionCommand = `git --git-dir=${path.join(repoPath, '.git')} show ${commit}:${relativeFilePath}`;
+      const currentCommand = `cat ${path.join(repoPath, relativeFilePath)}`;
 
       let solutionContent: string;
       let currentContent: string;
@@ -278,7 +274,6 @@ export function activate(context: vscode.ExtensionContext) {
       setTimeout(() => {
           if (codeEditor) {
             codeEditor.setDecorations(hintDecorationType, []);
-            // hintDecorationType.dispose();
           }
       }, 1500);
   });
