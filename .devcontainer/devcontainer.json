@@ -37,5 +37,8 @@
 	},
 	"remoteEnv": {
         "COMMIT": "${COMMIT:-603c26a5bcda365917285b8f32c6982e170c5cd3}"
-    }
+    },
+	"extensions": [
+		"./sprout-0.0.1.vsix"
+	]
 }
