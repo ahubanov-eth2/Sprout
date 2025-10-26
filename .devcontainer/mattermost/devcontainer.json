@@ -1,5 +1,5 @@
 {
-	"name": "Sprout (Node.js & TypeScript)",
+	"name": "Sprout (Node.js & TypeScript) - mattermost",
 	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
 	"features": {
 		"ghcr.io/devcontainers/features/node:1": {
@@ -37,6 +37,8 @@
 		}
 	},
 	"containerEnv": {
-        "COMMIT": "603c26a5bcda365917285b8f32c6982e170c5cd3"
-    }
+		"DYNAMIC_REPO_PATH": "mattermost/mattermost",
+		"COMMIT": "603c26a5bcda365917285b8f32c6982e170c5cd3",
+		"PARENT_COMMIT": "632b231283"
+	}
 }

@@ -3,7 +3,7 @@ set -e
 
 git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "git@github.com:"
 git submodule update --init --recursive
-export DYNAMIC_REPO_PATH=${DYNAMIC_REPO_PATH:-mattermost/mattermost}
+export DYNAMIC_REPO_PATH=${DYNAMIC_REPO_PATH}
 git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${DYNAMIC_REPO_PATH}.git data/project-repository
 
 if [ ! -d "data/project-repository" ]; then
@@ -12,9 +12,7 @@ if [ ! -d "data/project-repository" ]; then
 fi
 
 cd data/project-repository
-git checkout ${PARENT_COMMIT:-632b231283}
+git checkout ${PARENT_COMMIT}
 
 # cd webapp # TODO: make this generic
 # npm install --ignore-scripts # TODO: make this generic
-
-# echo "COMMIT=$COMMIT" | sudo tee -a /etc/environment
