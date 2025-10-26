@@ -13,5 +13,8 @@ fi
 
 cd data/project-repository
 git checkout ${PARENT_COMMIT:-632b231283}
+
 # cd webapp # TODO: make this generic
 # npm install --ignore-scripts # TODO: make this generic
+
+echo "COMMIT=$COMMIT" | sudo tee -a /etc/environment
