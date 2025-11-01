@@ -337,7 +337,7 @@ function getWebviewContent(
 {
     const uri = vscode.Uri.joinPath(
       vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
-      'src',
+      'media',
       'rightPanelWebView.html'
     );
     let htmlContent = fs.readFileSync(uri.fsPath, 'utf8');
