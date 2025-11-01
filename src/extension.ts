@@ -23,10 +23,18 @@ interface ConfigData {
   hint? : string
 }
 
+function getWorkspaceRoot(): string {
+  const folder = vscode.workspace.workspaceFolders?.[0];
+  if (!folder) {
+    throw new Error('No workspace folder open.');
+  }
+  return folder.uri.fsPath;
+}
+
 export function activate(context: vscode.ExtensionContext) {
 
-  const projectsDirectory = vscode.Uri.joinPath(
-    vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+  const projectsDirectory = path.join(
+    getWorkspaceRoot(),
     'data',
     'project-repository'
   );
@@ -37,8 +45,8 @@ export function activate(context: vscode.ExtensionContext) {
   const fileProvider = new FileTreeDataProvider();
   vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
 
-  if (fs.existsSync(projectsDirectory.fsPath)) {
-      fileProvider.setRepoPath(projectsDirectory.fsPath);
+  if (fs.existsSync(projectsDirectory)) {
+      fileProvider.setRepoPath(projectsDirectory);
   }
 
   function revealPanel(){
