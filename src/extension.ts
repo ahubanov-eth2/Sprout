@@ -25,7 +25,11 @@ interface ConfigData {
 
 export function activate(context: vscode.ExtensionContext) {
 
-  const projectsDirectory = path.join(context.extensionPath, "data", "project-repository");
+  const projectsDirectory = vscode.Uri.joinPath(
+    vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+    'data',
+    'project-repository'
+  );
 
   const leftProvider = new TaskProvider(context);
   vscode.window.registerTreeDataProvider('leftView', leftProvider);
@@ -33,8 +37,8 @@ export function activate(context: vscode.ExtensionContext) {
   const fileProvider = new FileTreeDataProvider();
   vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
 
-  if (fs.existsSync(projectsDirectory)) {
-      fileProvider.setRepoPath(projectsDirectory);
+  if (fs.existsSync(projectsDirectory.fsPath)) {
+      fileProvider.setRepoPath(projectsDirectory.fsPath);
   }
 
   function revealPanel(){
@@ -122,7 +126,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     if (currentPanel) {
-        updatePanelContent(currentPanel, item, context, siblings, currentIndex, parentLabel);
+        updatePanelContent(currentPanel, item, siblings, currentIndex, parentLabel);
     }
   });
   context.subscriptions.push(sectionSelectedDisposable);
@@ -325,15 +329,18 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 function getWebviewContent(
-  extensionPath: string, 
   item: any, 
   siblings: Section[], 
   currentIndex: number,
   parentLabel: string
 ): string 
 {
-    const htmlPath = path.join(extensionPath, 'src', 'rightPanelWebView.html');
-    let htmlContent = fs.readFileSync(htmlPath, 'utf8');
+    const uri = vscode.Uri.joinPath(
+      vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+      'src',
+      'rightPanelWebView.html'
+    );
+    let htmlContent = fs.readFileSync(uri.fsPath, 'utf8');
 
     htmlContent = htmlContent.replace('{{PARENT_TITLE}}', parentLabel);
 
@@ -361,8 +368,13 @@ function getWebviewContent(
     if (configData.taskDescriptionFile)
     {
       try {
-          const fullTaskDescriptionFilePath = path.join(extensionPath, "data", "structured-courses", configData.taskDescriptionFile);
-          const markdownContent = fs.readFileSync(fullTaskDescriptionFilePath, 'utf8');
+          const fullTaskDescriptionFile = vscode.Uri.joinPath(
+            vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+            'data',
+            'structured-courses',
+            configData.taskDescriptionFile
+          );
+          const markdownContent = fs.readFileSync(fullTaskDescriptionFile.fsPath, 'utf8');
           description = marked.parse(markdownContent) as string;
       } catch (error) {
           description = `Failed to load content for ${item.label}.`;
@@ -406,14 +418,12 @@ function getWebviewContent(
 function updatePanelContent(
   panel: vscode.WebviewPanel, 
   item: Section, 
-  extensionContext: 
-  vscode.ExtensionContext, 
   siblings: Section[], 
   currentIndex: number,
   parentLabel: string
 ) {
   panel.title = `${item.label}`;
-  panel.webview.html = getWebviewContent(extensionContext.extensionPath, item, siblings, currentIndex, parentLabel); 
+  panel.webview.html = getWebviewContent(item, siblings, currentIndex, parentLabel); 
 }
 
 export function deactivate() {}

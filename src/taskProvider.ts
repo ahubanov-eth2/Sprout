@@ -5,25 +5,29 @@ import * as fs from 'fs';
 
 export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.TreeItem> {
   private taskRoot: Section | undefined;
-  private readonly extensionPath: string;
 
   private _onDidChangeTreeData: vscode.EventEmitter<Section | undefined | null | void> = new vscode.EventEmitter<Section | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<Section | undefined | null | void> = this._onDidChangeTreeData.event;
 
   constructor(context: vscode.ExtensionContext) {
-    this.extensionPath = context.extensionPath;
     this.loadData();
   }
 
   private async loadData() {
-    const coursePath = path.join(this.extensionPath, 'data', 'structured-courses', 'task1');
+
+    const coursePath = vscode.Uri.joinPath(
+      vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+      'data',
+      'structured-courses', 
+      'task1'
+    );
     
-    const rootMetaPath = path.join(coursePath, 'course-info.yaml');
+    const rootMetaPath = path.join(coursePath.fsPath, 'course-info.yaml');
     const rootMetaContent = fs.readFileSync(rootMetaPath, 'utf8');
     const rootData = yaml.load(rootMetaContent) as any;
 
     const children = await Promise.all(
-        rootData.content.map((childDir: string) => this.loadSection(path.join(coursePath, childDir)))
+        rootData.content.map((childDir: string) => this.loadSection(path.join(coursePath.fsPath, childDir)))
     );
 
     this.taskRoot = new Section(
