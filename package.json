@@ -63,5 +63,11 @@
     "diff": "^8.0.2",
     "js-yaml": "^4.1.0",
     "marked": "^16.2.1"
-  }
+  },
+  "files": [
+    "out",
+    "package.json",
+    "README.md",
+    "src"
+  ]
 }
