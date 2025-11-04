@@ -130,8 +130,15 @@ export function activate(context: vscode.ExtensionContext) {
     revealPanel();
 
     if (isCodeFileOpen && currentPanel) {
-      await vscode.commands.executeCommand('workbench.action.splitEditorToBelowGroup');
+        const editor = vscode.window.visibleTextEditors.find(
+            e => e.document.uri.toString() === activeFileUri?.toString()
+        );
+        if (editor) {
+            await vscode.window.showTextDocument(editor.document, vscode.ViewColumn.One);
+            await vscode.commands.executeCommand('workbench.action.splitEditorToBelowGroup');
+        }
     }
+
 
     if (currentPanel) {
         updatePanelContent(currentPanel, item, siblings, currentIndex, parentLabel);
