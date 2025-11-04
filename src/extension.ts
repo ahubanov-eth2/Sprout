@@ -125,54 +125,12 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }
 
-    // await vscode.commands.executeCommand('workbench.action.closePanel');
-    // vscode.commands.executeCommand('setContext', 'sprout.hasClonedRepo', isCodeFileOpen);
-    // revealPanel();
-
-    // if (isCodeFileOpen && currentPanel) {
-    //     const editor = vscode.window.visibleTextEditors.find(
-    //         e => e.document.uri.toString() === activeFileUri?.toString()
-    //     );
-    //     if (editor) {
-    //         await vscode.window.showTextDocument(editor.document, vscode.ViewColumn.One);
-    //         await vscode.commands.executeCommand('workbench.action.splitEditorToBelowGroup');
-    //     }
-    // }
-
     await vscode.commands.executeCommand('workbench.action.closePanel');
-    await vscode.commands.executeCommand('setContext', 'sprout.hasClonedRepo', isCodeFileOpen);
+    vscode.commands.executeCommand('setContext', 'sprout.hasClonedRepo', isCodeFileOpen);
+    revealPanel();
 
-    if (isCodeFileOpen && activeFileUri) {
-        const doc = await vscode.workspace.openTextDocument(activeFileUri);
-        await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One });
-    }
-
-    if (vscode.window.tabGroups.all.length < 2) {
-        await vscode.commands.executeCommand('workbench.action.splitEditorRight');
-        await new Promise(res => setTimeout(res, 250));
-    }
-
-    const rightGroup = vscode.window.tabGroups.all[1];
-
-    if (!currentPanel) {
-        currentPanel = vscode.window.createWebviewPanel(
-            'myRightPanel',
-            'My Right Panel',
-            { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
-            { enableScripts: true }
-        );
-
-        currentPanel.onDidDispose(() => {
-            currentPanel = undefined;
-        }, null, context.subscriptions);
-    } else {
-        currentPanel.reveal(vscode.ViewColumn.Two, true);
-    }
-
-    await new Promise(res => setTimeout(res, 150));
-    if (activeFileUri) {
-        const doc = await vscode.workspace.openTextDocument(activeFileUri);
-        await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One });
+    if (isCodeFileOpen) {
+      await vscode.commands.executeCommand('workbench.action.splitEditorToBelowGroup');
     }
 
     if (currentPanel) {
