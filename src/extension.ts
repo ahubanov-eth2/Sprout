@@ -90,7 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
+const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
     
     const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
     const parent = leftProvider.findParent(leftProvider.getRoot(), item);
@@ -113,8 +113,6 @@ export function activate(context: vscode.ExtensionContext) {
               await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
               activeFileUri = fileUri; 
               isCodeFileOpen = true;
-              vscode.window.showErrorMessage(`File Uri is: ${activeFileUri}`);
-              vscode.window.showErrorMessage(`isCodeFileOpen is: ${isCodeFileOpen}`);
           } catch (error) {
               vscode.window.showErrorMessage(`Could not open file: ${fileUri}`);
           }
@@ -122,7 +120,6 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.window.showWarningMessage('No cloned repository found to open the file.');
       }
     } else {
-        vscode.window.showErrorMessage(`Closing editors.`);
         if (vscode.window.tabGroups.all.length > 1) {
             await vscode.commands.executeCommand('workbench.action.closeOtherEditors');
         }
@@ -130,10 +127,27 @@ export function activate(context: vscode.ExtensionContext) {
 
     await vscode.commands.executeCommand('workbench.action.closePanel');
     vscode.commands.executeCommand('setContext', 'sprout.hasClonedRepo', isCodeFileOpen);
-    revealPanel();
 
-    if (isCodeFileOpen) {
-      await vscode.commands.executeCommand('workbench.action.splitEditorToBelowGroup');
+    if (isCodeFileOpen)
+    {
+        if (!currentPanel) {
+            currentPanel = vscode.window.createWebviewPanel(
+                'myRightPanel',
+                'My Right Panel',
+                { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
+                { enableScripts: true }
+            );
+
+            currentPanel.onDidDispose(() => {
+                currentPanel = undefined;
+            }, null, context.subscriptions);
+        } else {
+            currentPanel.reveal(vscode.ViewColumn.Two, true);
+        }
+    }
+    else
+    {
+        revealPanel();
     }
 
     if (currentPanel) {
