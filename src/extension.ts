@@ -147,6 +147,13 @@ export function activate(context: vscode.ExtensionContext) {
         await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One });
     }
 
+    if (vscode.window.tabGroups.all.length < 2) {
+        await vscode.commands.executeCommand('workbench.action.splitEditorRight');
+        await new Promise(res => setTimeout(res, 250));
+    }
+
+    const rightGroup = vscode.window.tabGroups.all[1];
+
     if (!currentPanel) {
         currentPanel = vscode.window.createWebviewPanel(
             'myRightPanel',
@@ -160,6 +167,12 @@ export function activate(context: vscode.ExtensionContext) {
         }, null, context.subscriptions);
     } else {
         currentPanel.reveal(vscode.ViewColumn.Two, true);
+    }
+
+    await new Promise(res => setTimeout(res, 150));
+    if (activeFileUri) {
+        const doc = await vscode.workspace.openTextDocument(activeFileUri);
+        await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One });
     }
 
     if (currentPanel) {
