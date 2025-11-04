@@ -113,6 +113,8 @@ export function activate(context: vscode.ExtensionContext) {
               await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
               activeFileUri = fileUri; 
               isCodeFileOpen = true;
+              vscode.window.showErrorMessage(`File Uri is: ${activeFileUri}`);
+              vscode.window.showErrorMessage(`isCodeFileOpen is: ${isCodeFileOpen}`);
           } catch (error) {
               vscode.window.showErrorMessage(`Could not open file: ${fileUri}`);
           }
@@ -120,6 +122,7 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.window.showWarningMessage('No cloned repository found to open the file.');
       }
     } else {
+        vscode.window.showErrorMessage(`Closing editors.`);
         if (vscode.window.tabGroups.all.length > 1) {
             await vscode.commands.executeCommand('workbench.action.closeOtherEditors');
         }
