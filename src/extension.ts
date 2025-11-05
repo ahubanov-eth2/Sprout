@@ -15,6 +15,20 @@ const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
 });
 
+const iconPath = vscode.Uri.joinPath(
+  vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+  'media',
+  'bulb.png'
+);
+
+const iconDecorationType = vscode.window.createTextEditorDecorationType({
+  gutterIconPath: iconPath,
+  gutterIconSize: 'contain',
+});
+
+const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string }>();
+let clickListenerRegistered = false;
+
 interface ConfigData {
   setupData? : any,
   taskDescriptionFile? : string,
@@ -298,11 +312,17 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
       });
 
       codeEditor.setDecorations(hintDecorationType, linesToHighlight);
+      codeEditor.setDecorations(iconDecorationType, linesToHighlight);
       setTimeout(() => {
           if (codeEditor) {
             codeEditor.setDecorations(hintDecorationType, []);
           }
       }, 1500);
+
+      clickableHintLines.set(codeEditor.document.uri.toString(), {
+        lines: lineRanges,
+        hintText: configData.hint || ''
+      });
   });
 
   const openFileDisposable = vscode.commands.registerCommand('sprout.openFile', (uri: vscode.Uri) => {
@@ -337,9 +357,24 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
     } catch (e) {
         vscode.window.showErrorMessage(`Error reading hint file: ${e instanceof Error ? e.message : String(e)}`);
     }
-
-
   })
+
+  if (!clickListenerRegistered) {
+    const clickListener = vscode.window.onDidChangeTextEditorSelection(event => {
+      const docUri = event.textEditor.document.uri.toString();
+      const info = clickableHintLines.get(docUri);
+      if (!info) return;
+
+      const clickedLine = event.selections[0].start.line + 1;
+      const rangeClicked = info.lines.find(([start, end]) => clickedLine >= start && clickedLine <= end);
+      if (rangeClicked) {
+        showInlineHint(event.textEditor, rangeClicked, info.hintText);
+      }
+    });
+
+    context.subscriptions.push(clickListener);
+    clickListenerRegistered = true;
+  }
 
   context.subscriptions.push(
     nextItemDisposable, 
@@ -348,10 +383,37 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
     showSolutionDisposable,
     highlightLinesDisposable,
     showHintPopupDisposable, 
-    hintDecorationType
+    hintDecorationType,
+    iconDecorationType
   );
 }
 
+function showInlineHint(editor: vscode.TextEditor, range: [number, number], hintText: string) {
+  const [startLine, endLine] = range;
+  const startPos = new vscode.Position(endLine, 0);
+
+  const virtualDocUri = vscode.Uri.parse(`sprouthint:${editor.document.fileName}`);
+  const provider = new class implements vscode.TextDocumentContentProvider {
+    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+    onDidChange = this.onDidChangeEmitter.event;
+    provideTextDocumentContent(uri: vscode.Uri): string {
+      return `Needed changes:\n\n${hintText}`;
+    }
+  };
+
+  const scheme = 'sprouthint';
+  if (!vscode.workspace.textDocuments.some(d => d.uri.scheme === scheme)) {
+    vscode.workspace.registerTextDocumentContentProvider(scheme, provider);
+  }
+
+  vscode.commands.executeCommand(
+    'editor.action.peekLocations',
+    editor.document.uri,
+    startPos,
+    [new vscode.Location(virtualDocUri, new vscode.Position(0, 0))],
+    'peek'
+  );
+}
 
 function getWebviewContent(
   item: any, 
