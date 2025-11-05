@@ -213,11 +213,6 @@
                 <button id="prevButton">Previous</button>
                 <button id="nextButton">Next</button>
             </div>
-            <div class="navigation-buttons additional-buttons">
-                {{HIGHLIGHT_LINES_BUTTON}}
-                {{GIVE_HINT_BUTTON}}
-                {{SHOW_SOLUTION_BUTTON}}
-            </div>
         </div>
 
         <div id="hintPopup" class="hint-popup">
@@ -227,6 +222,12 @@
         {{PAGINATION}}
         <h2>{{TITLE}}</h2>
         <p>{{DESCRIPTION}}</p>
+
+        <div class="navigation-buttons additional-buttons">
+            {{HIGHLIGHT_LINES_BUTTON}}
+            {{GIVE_HINT_BUTTON}}
+            {{SHOW_SOLUTION_BUTTON}}
+        </div>
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
