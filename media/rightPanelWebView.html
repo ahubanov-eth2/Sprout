@@ -8,14 +8,13 @@
             line-height: 1.5;
         }
 
-        /* New CSS for the Popup */
         .hint-popup {
             position: absolute;
             top: 0;
-            right: 100%; /* Position it to the left of the button's container */
-            margin-right: 10px; /* Spacing between button and popup */
-            background-color: var(--vscode-editor-background); /* Use VS Code background variable */
-            color: var(--vscode-editor-foreground); /* Use VS Code foreground variable */
+            left: 100%; /* Position to the left of the button's container */
+            margin-left: 10px; /* Spacing between button and popup */
+            background-color: var(--vscode-editor-background); /* VS Code background variable */
+            color: var(--vscode-editor-foreground); /* VS Code foreground variable */
             border: 1px solid var(--vscode-editorGroup-border);
             padding: 15px;
             width: 300px; /* Fixed width for better readability */
@@ -29,7 +28,7 @@
 
         .hint-popup-content {
             /* Basic text styling inside the popup */
-            white-space: pre-wrap; /* Preserves formatting (newlines) from the file */
+            white-space: pre-wrap; /* Preserves formatting from the file */
         }
 
         .header-container {
@@ -361,7 +360,8 @@
                 const bodyRect = document.body.getBoundingClientRect();
                 
                 popup.style.top = `${buttonRect.top - bodyRect.top}px`;
-                popup.style.right = `${document.body.clientWidth - buttonRect.left + 10}px`;
+                popup.style.left = `${buttonRect.right - bodyRect.left + 10}px`;
+                popup.style.right = "auto";
                 
                 const dismissListener = (e) => {
                     if (!popup.contains(e.target) && e.target !== buttonElement) {
