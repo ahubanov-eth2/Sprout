@@ -107,11 +107,8 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (!active) {
           codeEditor.setDecorations(hintDecorationType, []);
-
           clickableHintLines.delete(codeEditor.document.uri.toString());
-
           codeLensChangeEmitter.fire();
-
           return;
       }
 
@@ -477,12 +474,6 @@ function getWebviewContent(
       </button>
     `;
 
-    let giveHintHtml = `
-      <button id="giveHintButton">
-          Show Hint: See description of needed changes
-      </button>
-    `;
-
     let showSolutionHtml = `
       <button id="showSolutionButton">
           Show Hint: Reveal solution in a git diff view
@@ -490,7 +481,6 @@ function getWebviewContent(
     `;
 
     htmlContent = htmlContent.replace('{{HIGHLIGHT_LINES_BUTTON}}', highlightLinesHtml);
-    htmlContent = htmlContent.replace('{{GIVE_HINT_BUTTON}}', giveHintHtml);
     htmlContent = htmlContent.replace('{{SHOW_SOLUTION_BUTTON}}', showSolutionHtml);
     htmlContent = htmlContent.replace('{{HAS_FILE_TO_OPEN}}', configData.codeFileToEdit ? 'true' : 'false');
 

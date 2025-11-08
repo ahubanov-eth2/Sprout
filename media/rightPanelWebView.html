@@ -138,15 +138,6 @@
             background-color: #007ede;
         }
 
-        #giveHintButton {
-            background-color: #0078d4;
-            border: none;
-        }
-
-        #giveHintButton:hover {
-            background-color: #007ede;
-        }
-
         #showSolutionButton {
             background-color: #0078d4;
             border: none;
@@ -224,7 +215,6 @@
 
         <div class="navigation-buttons additional-buttons">
             {{HIGHLIGHT_LINES_BUTTON}}
-            {{GIVE_HINT_BUTTON}}
             {{SHOW_SOLUTION_BUTTON}}
         </div>
 
@@ -287,11 +277,9 @@
 
                 const hasFileToOpen = document.body.dataset.hasFile === 'true';
                 const highlightButton = document.getElementById('highlightLinesButton');
-                const giveHintButton = document.getElementById('giveHintButton');
                 const showSolutionButton = document.getElementById('showSolutionButton');
                 if (!hasFileToOpen) {
                     highlightButton?.remove();
-                    giveHintButton?.remove();
                     showSolutionButton?.remove();
                 }
 
@@ -320,16 +308,6 @@
                     showSolutionButton.addEventListener('click', () => {
                         vscode.postMessage({
                             command: 'showSolution',
-                            label: currentItemLabel
-                        });
-                    });
-                }
-
-                if (giveHintButton) {
-                    giveHintButton.addEventListener('click', () => {
-                        giveHintButton.setAttribute('data-clicked', 'true'); 
-                        vscode.postMessage({
-                            command: 'getHintText',
                             label: currentItemLabel
                         });
                     });
