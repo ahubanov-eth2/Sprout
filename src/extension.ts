@@ -27,7 +27,6 @@ const iconDecorationType = vscode.window.createTextEditorDecorationType({
 });
 
 const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string }>();
-let clickListenerRegistered = false;
 
 interface ConfigData {
   setupData? : any,
@@ -313,16 +312,18 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
 
       codeEditor.setDecorations(hintDecorationType, linesToHighlight);
       codeEditor.setDecorations(iconDecorationType, linesToHighlight);
-      setTimeout(() => {
-          if (codeEditor) {
-            codeEditor.setDecorations(hintDecorationType, []);
-          }
-      }, 1500);
 
       clickableHintLines.set(codeEditor.document.uri.toString(), {
         lines: lineRanges,
         hintText: configData.hint || ''
       });
+
+      await vscode.window.showTextDocument(codeEditor.document, codeEditor.viewColumn, false);
+
+      // await vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'line', value: 0 }); 
+      // await new Promise(resolve => setTimeout(resolve, 150));
+      
+      await vscode.commands.executeCommand('editor.action.refreshCodeLens');
   });
 
   const openFileDisposable = vscode.commands.registerCommand('sprout.openFile', (uri: vscode.Uri) => {
@@ -359,22 +360,35 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
     }
   })
 
-  if (!clickListenerRegistered) {
-    const clickListener = vscode.window.onDidChangeTextEditorSelection(event => {
-      const docUri = event.textEditor.document.uri.toString();
-      const info = clickableHintLines.get(docUri);
-      if (!info) return;
+  const showInlineHintFromLensDisposable = vscode.commands.registerCommand(
+    'sprout.showInlineHintFromLens',
+    (uri: vscode.Uri, line: number) => {
+      const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uri.toString());
+      const info = clickableHintLines.get(uri.toString());
+      if (!editor || !info) return;
 
-      const clickedLine = event.selections[0].start.line + 1;
-      const rangeClicked = info.lines.find(([start, end]) => clickedLine >= start && clickedLine <= end);
+      const rangeClicked = info.lines.find(([start, end]) => line >= start && line <= end);
       if (rangeClicked) {
-        showInlineHint(event.textEditor, rangeClicked, info.hintText);
+        showInlineHint(editor, rangeClicked, info.hintText);
       }
-    });
+    }
+  );
 
-    context.subscriptions.push(clickListener);
-    clickListenerRegistered = true;
-  }
+  const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, {
+    provideCodeLenses(document) {
+      const hintInfo = clickableHintLines.get(document.uri.toString());
+      if (!hintInfo) return [];
+
+      return hintInfo.lines.map(([start]) => {
+        const range = new vscode.Range(start - 1, 0, start - 1, 0);
+        return new vscode.CodeLens(range, {
+          title: '💬 Hint',
+          command: 'sprout.showInlineHintFromLens',
+          arguments: [document.uri, start]
+        });
+      });
+    }
+  });
 
   context.subscriptions.push(
     nextItemDisposable, 
@@ -384,7 +398,9 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
     highlightLinesDisposable,
     showHintPopupDisposable, 
     hintDecorationType,
-    iconDecorationType
+    iconDecorationType,
+    showInlineHintFromLensDisposable,
+    codeLensProviderDisposable
   );
 }
 
