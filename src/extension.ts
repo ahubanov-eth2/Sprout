@@ -35,6 +35,28 @@ function getWorkspaceRoot(): string {
   return folder.uri.fsPath;
 }
 
+const scheme = 'sprouthint';
+const hintTexts = new Map<string, string>();
+
+const provider = new class implements vscode.TextDocumentContentProvider {
+  onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+  onDidChange = this.onDidChangeEmitter.event;
+  provideTextDocumentContent(uri: vscode.Uri): string {
+    const key = uri.path;
+    const text = hintTexts.get(key) ?? 'No hint available.';
+
+    const formattedText = text
+    .split(/\s+/)
+    .reduce((acc, word, i) => {
+      const sep = (i + 1) % 5 === 0 ? '\n' : ' ';
+      return acc + word + sep;
+    }, '');
+
+    return `Needed changes:\n\n${formattedText}`;
+  }
+};
+
+
 export function activate(context: vscode.ExtensionContext) {
 
   const projectsDirectory = path.join(
@@ -378,7 +400,8 @@ export function activate(context: vscode.ExtensionContext) {
     showInlineHintFromLensDisposable,
     codeLensProviderDisposable,
     toggleHighlightDisposable,
-    sectionSelectedDisposable
+    sectionSelectedDisposable,
+    vscode.workspace.registerTextDocumentContentProvider(scheme, provider)
   );
 }
 
@@ -387,18 +410,8 @@ function showInlineHint(editor: vscode.TextEditor, range: [number, number], hint
   const startPos = new vscode.Position(endLine, 0);
 
   const virtualDocUri = vscode.Uri.parse(`sprouthint:${editor.document.fileName}`);
-  const provider = new class implements vscode.TextDocumentContentProvider {
-    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
-    onDidChange = this.onDidChangeEmitter.event;
-    provideTextDocumentContent(uri: vscode.Uri): string {
-      return `Needed changes:\n\n${hintText}`;
-    }
-  };
-
-  const scheme = 'sprouthint';
-  if (!vscode.workspace.textDocuments.some(d => d.uri.scheme === scheme)) {
-    vscode.workspace.registerTextDocumentContentProvider(scheme, provider);
-  }
+  hintTexts.set(virtualDocUri.path, hintText);
+  provider.onDidChangeEmitter.fire(virtualDocUri);
 
   vscode.commands.executeCommand(
     'editor.action.peekLocations',
