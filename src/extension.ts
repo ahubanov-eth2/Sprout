@@ -354,14 +354,16 @@ export function activate(context: vscode.ExtensionContext) {
       const hintInfo = clickableHintLines.get(document.uri.toString());
       if (!hintInfo) return [];
 
-      return hintInfo.lines.map(([start]) => {
-        const range = new vscode.Range(start - 1, 0, start - 1, 0);
-        return new vscode.CodeLens(range, {
+      const [firstStart] = hintInfo.lines[0];
+      const range = new vscode.Range(firstStart - 1, 0, firstStart - 1, 0);
+
+      return [
+        new vscode.CodeLens(range, {
           title: '💬 Hint',
           command: 'sprout.showInlineHintFromLens',
-          arguments: [document.uri, start]
-        });
-      });
+          arguments: [document.uri, firstStart]
+        })
+      ];
     },
     onDidChangeCodeLenses: codeLensChangeEmitter.event
   });
