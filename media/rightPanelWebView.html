@@ -297,12 +297,24 @@
 
                 if (highlightButton) {
                     highlightButton.addEventListener('click', () => {
+                        const isActive = highlightButton.classList.toggle('active');
+
+                        if (isActive) {
+                            highlightButton.textContent = 'Hide Hint: Remove highlighting';
+                            highlightButton.style.backgroundColor = '#02006c';
+                        } else {
+                            highlightButton.textContent = 'Show Hint: Highlight lines where changes are needed';
+                            highlightButton.style.backgroundColor = '#0078d4';
+                        }
+
                         vscode.postMessage({
-                            command: 'highlightLinesHint',
-                            label: currentItemLabel
+                            command: 'toggleHighlight',
+                            label: currentItemLabel,
+                            active: isActive
                         });
                     });
                 }
+
 
                 if (showSolutionButton) {
                     showSolutionButton.addEventListener('click', () => {
@@ -335,6 +347,20 @@
                 });
 
                 document.getElementById('nextButton').addEventListener('click', () => {
+                    const highlightButton = document.getElementById('highlightLinesButton');
+                    
+                    if (highlightButton && highlightButton.classList.contains('active')) {
+                        highlightButton.classList.remove('active');
+                        highlightButton.textContent = 'Show Hint: Highlight lines where changes are needed';
+                        highlightButton.style.backgroundColor = '#0078d4';
+
+                        vscode.postMessage({
+                            command: 'toggleHighlight',
+                            label: currentItemLabel,
+                            active: false
+                        });
+                    }
+
                     vscode.postMessage({
                         command: 'nextItem',
                         label: currentItemLabel
@@ -342,6 +368,20 @@
                 });
 
                 document.getElementById('prevButton').addEventListener('click', () => {
+                    const highlightButton = document.getElementById('highlightLinesButton');
+                    
+                    if (highlightButton && highlightButton.classList.contains('active')) {
+                        highlightButton.classList.remove('active');
+                        highlightButton.textContent = 'Show Hint: Highlight lines where changes are needed';
+                        highlightButton.style.backgroundColor = '#0078d4';
+
+                        vscode.postMessage({
+                            command: 'toggleHighlight',
+                            label: currentItemLabel,
+                            active: false
+                        });
+                    }
+
                     vscode.postMessage({
                         command: 'prevItem',
                         label: currentItemLabel

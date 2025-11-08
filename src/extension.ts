@@ -7,6 +7,8 @@ import { marked } from 'marked';
 import * as os from 'os';
 import { exec } from 'child_process';
 
+const codeLensChangeEmitter = new vscode.EventEmitter<void>();
+
 let currentPanel: vscode.WebviewPanel | undefined;
 let onDidEndTaskDisposable: vscode.Disposable | undefined;
 let activeFileUri: vscode.Uri | undefined;
@@ -82,14 +84,14 @@ export function activate(context: vscode.ExtensionContext) {
                     case 'prevItem':
                         vscode.commands.executeCommand('sprout.goToPrevItem', message.label);
                         break;
-                    case 'highlightLinesHint':
-                        vscode.commands.executeCommand('sprout.highlightLinesHint', message.label);
-                        break;
                     case 'showSolution':
                         vscode.commands.executeCommand('sprout.showSolution', message.label);
                         break;
                     case 'getHintText':
                         vscode.commands.executeCommand('sprout.showHintPopup', message.label);
+                        break;
+                    case 'toggleHighlight':
+                        vscode.commands.executeCommand('sprout.toggleHighlight', message.label, message.active);
                         break;
                 }
             },
@@ -103,7 +105,54 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
+  const toggleHighlightDisposable = vscode.commands.registerCommand('sprout.toggleHighlight', async (label: string, active: boolean) => {
+      if (!activeFileUri) {
+          vscode.window.showWarningMessage('No active code editor found.');
+          return;
+      }
+
+      const codeEditor = vscode.window.visibleTextEditors.find(
+          editor => editor.document.uri.toString() === activeFileUri?.toString()
+      );
+      if (!codeEditor) return;
+
+      if (!active) {
+          codeEditor.setDecorations(hintDecorationType, []);
+          codeEditor.setDecorations(iconDecorationType, []);
+
+          clickableHintLines.delete(codeEditor.document.uri.toString());
+
+          codeLensChangeEmitter.fire();
+
+          return;
+      }
+
+      const currentItem = leftProvider.findLeafByLabel(label);
+      if (!currentItem) return;
+
+      let configData: ConfigData = {};
+      if (currentItem.configFilePath) {
+          const config = fs.readFileSync(currentItem.configFilePath, "utf8");
+          configData = JSON.parse(config);
+      }
+
+      const lineRanges = configData.hintLineRanges as [number, number][];
+      const linesToHighlight = (lineRanges || []).map(([startLine, endLine]) => ({
+          range: new vscode.Range(startLine - 1, 0, endLine - 2, 1000000)
+      }));
+
+      codeEditor.setDecorations(hintDecorationType, linesToHighlight);
+      codeEditor.setDecorations(iconDecorationType, linesToHighlight);
+
+      clickableHintLines.set(codeEditor.document.uri.toString(), {
+        lines: lineRanges,
+        hintText: configData.hint || ''
+      });
+
+      codeLensChangeEmitter.fire();
+  });
+
+  const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
     
     const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
     const parent = leftProvider.findParent(leftProvider.getRoot(), item);
@@ -167,7 +216,6 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
         updatePanelContent(currentPanel, item, siblings, currentIndex, parentLabel);
     }
   });
-  context.subscriptions.push(sectionSelectedDisposable);
 
   const nextItemDisposable = vscode.commands.registerCommand('sprout.goToNextItem', (label: string) => {
     const currentItem = leftProvider.findLeafByLabel(label);
@@ -269,63 +317,6 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
       }
   })
 
-  const highlightLinesDisposable = vscode.commands.registerCommand('sprout.highlightLinesHint', async (label: string) => {
-      if (!activeFileUri) {
-          vscode.window.showWarningMessage('No active code editor found.');
-          return;
-      }
-
-      const codeEditor = vscode.window.visibleTextEditors.find(
-          editor => editor.document.uri.toString() === activeFileUri?.toString()
-      );
-
-      if (!codeEditor) {
-          vscode.window.showWarningMessage('The code editor for this file is not visible.');
-          return;
-      }
-
-      const currentItem = leftProvider.findLeafByLabel(label);
-
-      let configData: ConfigData = {};
-      if (currentItem && currentItem.configFilePath)
-      {
-        const config = fs.readFileSync(currentItem.configFilePath, "utf8");
-        configData = JSON.parse(config);
-      }
-
-      const lineRanges = configData.hintLineRanges as [number, number][] 
-
-      const linesToHighlight = (lineRanges || []).map((range: number[]) => {
-        const [startLine, endLine] = range;
-
-        const lineRangeInstance = new vscode.Range(
-          startLine - 1, 
-          0, 
-          endLine - 2, // TODO: figure out correct indexing
-          1000000 
-        );
-
-        return {
-          range: lineRangeInstance
-        };
-      });
-
-      codeEditor.setDecorations(hintDecorationType, linesToHighlight);
-      codeEditor.setDecorations(iconDecorationType, linesToHighlight);
-
-      clickableHintLines.set(codeEditor.document.uri.toString(), {
-        lines: lineRanges,
-        hintText: configData.hint || ''
-      });
-
-      await vscode.window.showTextDocument(codeEditor.document, codeEditor.viewColumn, false);
-
-      // await vscode.commands.executeCommand('cursorMove', { to: 'up', by: 'line', value: 0 }); 
-      // await new Promise(resolve => setTimeout(resolve, 150));
-      
-      await vscode.commands.executeCommand('editor.action.refreshCodeLens');
-  });
-
   const openFileDisposable = vscode.commands.registerCommand('sprout.openFile', (uri: vscode.Uri) => {
       vscode.window.showTextDocument(uri);
   })
@@ -387,7 +378,8 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
           arguments: [document.uri, start]
         });
       });
-    }
+    },
+    onDidChangeCodeLenses: codeLensChangeEmitter.event
   });
 
   context.subscriptions.push(
@@ -395,12 +387,13 @@ const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineCl
     prevItemDisposable, 
     openFileDisposable, 
     showSolutionDisposable,
-    highlightLinesDisposable,
     showHintPopupDisposable, 
     hintDecorationType,
     iconDecorationType,
     showInlineHintFromLensDisposable,
-    codeLensProviderDisposable
+    codeLensProviderDisposable,
+    toggleHighlightDisposable,
+    sectionSelectedDisposable
   );
 }
 
