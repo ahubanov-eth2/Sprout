@@ -17,17 +17,6 @@ const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
 });
 
-const iconPath = vscode.Uri.joinPath(
-  vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
-  'media',
-  'bulb.png'
-);
-
-const iconDecorationType = vscode.window.createTextEditorDecorationType({
-  gutterIconPath: iconPath,
-  gutterIconSize: 'contain',
-});
-
 const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string }>();
 
 interface ConfigData {
@@ -118,7 +107,6 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (!active) {
           codeEditor.setDecorations(hintDecorationType, []);
-          codeEditor.setDecorations(iconDecorationType, []);
 
           clickableHintLines.delete(codeEditor.document.uri.toString());
 
@@ -142,7 +130,6 @@ export function activate(context: vscode.ExtensionContext) {
       }));
 
       codeEditor.setDecorations(hintDecorationType, linesToHighlight);
-      codeEditor.setDecorations(iconDecorationType, linesToHighlight);
 
       clickableHintLines.set(codeEditor.document.uri.toString(), {
         lines: lineRanges,
@@ -389,7 +376,6 @@ export function activate(context: vscode.ExtensionContext) {
     showSolutionDisposable,
     showHintPopupDisposable, 
     hintDecorationType,
-    iconDecorationType,
     showInlineHintFromLensDisposable,
     codeLensProviderDisposable,
     toggleHighlightDisposable,
