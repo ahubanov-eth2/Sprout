@@ -156,6 +156,14 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       codeLensChangeEmitter.fire();
+
+      if (lineRanges && lineRanges.length > 0) {
+        const [firstStart] = lineRanges[0];
+        const targetPos = new vscode.Position(firstStart - 1, 0);
+        const targetRange = new vscode.Range(targetPos, targetPos);
+
+        codeEditor.revealRange(targetRange, vscode.TextEditorRevealType.AtTop);
+      }
   });
 
   const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
