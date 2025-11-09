@@ -175,6 +175,10 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
 
     return allLeaves[currentIndex - 1];
   }
+
+  getParent(element: Section): Section | undefined {
+    return this.findParent(this.taskRoot as Section, element);
+  }
 }
 
 export class Section extends vscode.TreeItem {

@@ -66,7 +66,10 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const leftProvider = new TaskProvider(context);
-  vscode.window.registerTreeDataProvider('leftView', leftProvider);
+  const treeView = vscode.window.createTreeView('leftView', {
+    treeDataProvider: leftProvider
+  });
+  // vscode.window.registerTreeDataProvider('leftView', leftProvider);
 
   const fileProvider = new FileTreeDataProvider();
   vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
@@ -238,6 +241,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     if (currentPanel) {
         updatePanelContent(currentPanel, item, siblings, currentIndex, parentLabel);
+    }
+
+    if (treeView) {
+      await treeView.reveal(item, { expand: true, focus: true, select: true });
     }
   });
 
