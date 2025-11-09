@@ -17,7 +17,7 @@ const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
 });
 
-const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string }>();
+const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string }>();
 
 interface ConfigData {
   setupData? : any,
@@ -155,7 +155,8 @@ export function activate(context: vscode.ExtensionContext) {
 
       clickableHintLines.set(codeEditor.document.uri.toString(), {
         lines: lineRanges,
-        hintText: configData.hint || ''
+        hintText: configData.hint || '',
+        label: label
       });
 
       codeLensChangeEmitter.fire();
@@ -296,10 +297,6 @@ export function activate(context: vscode.ExtensionContext) {
       const relativeFilePath = path.relative(repoPath, activeFileUri.fsPath);
 
       const solutionCommand = `git --git-dir=${path.join(repoPath, '.git')} show ${process.env.COMMIT}:${relativeFilePath}`;
-      const currentCommand = `cat ${path.join(repoPath, relativeFilePath)}`;
-
-      let solutionContent: string;
-      let currentContent: string;
 
       try {
           const solutionResult = await new Promise<string>((resolve, reject) => {
@@ -340,7 +337,7 @@ export function activate(context: vscode.ExtensionContext) {
           setTimeout(() => {
               fs.unlink(currentTempFilePath, (err) => err && console.error('Failed to delete temp file:', err));
               fs.unlink(solutionTempFilePath, (err) => err && console.error('Failed to delete temp file:', err));
-          }, 5000);
+          }, 30000);
 
       } catch (e: any) {
           vscode.window.showErrorMessage(e.message);
@@ -409,6 +406,11 @@ export function activate(context: vscode.ExtensionContext) {
           title: '💬 Hint',
           command: 'sprout.showInlineHintFromLens',
           arguments: [document.uri, firstStart]
+        }),
+        new vscode.CodeLens(range, {
+          title: '🧩 Show Solution',
+          command: 'sprout.showSolution',
+          arguments: [hintInfo.label]
         })
       ];
     },
