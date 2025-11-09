@@ -181,6 +181,16 @@ export function activate(context: vscode.ExtensionContext) {
               await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
               activeFileUri = fileUri; 
               isCodeFileOpen = true;
+
+              let terminal = vscode.window.terminals.find(t => t.name === 'Sprout Terminal');
+              if (!terminal) {
+                terminal = vscode.window.createTerminal({
+                  name: 'Sprout Terminal',
+                  cwd: repoDirectory
+                });
+              }
+              terminal.show();
+
           } catch (error) {
               vscode.window.showErrorMessage(`Could not open file: ${fileUri}`);
           }
