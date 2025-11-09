@@ -138,15 +138,6 @@
             background-color: #007ede;
         }
 
-        #showSolutionButton {
-            background-color: #0078d4;
-            border: none;
-        }
-
-        #showSolutionButton:hover {
-            background-color: #007ede;
-        }
-
         .breadcrumbs {
             font-size: 14px;
             display: flex;
@@ -215,7 +206,6 @@
 
         <div class="navigation-buttons additional-buttons">
             {{HIGHLIGHT_LINES_BUTTON}}
-            {{SHOW_SOLUTION_BUTTON}}
         </div>
 
         <script>
@@ -277,10 +267,8 @@
 
                 const hasFileToOpen = document.body.dataset.hasFile === 'true';
                 const highlightButton = document.getElementById('highlightLinesButton');
-                const showSolutionButton = document.getElementById('showSolutionButton');
                 if (!hasFileToOpen) {
                     highlightButton?.remove();
-                    showSolutionButton?.remove();
                 }
 
                 if (highlightButton) {
@@ -299,16 +287,6 @@
                             command: 'toggleHighlight',
                             label: currentItemLabel,
                             active: isActive
-                        });
-                    });
-                }
-
-
-                if (showSolutionButton) {
-                    showSolutionButton.addEventListener('click', () => {
-                        vscode.postMessage({
-                            command: 'showSolution',
-                            label: currentItemLabel
                         });
                     });
                 }

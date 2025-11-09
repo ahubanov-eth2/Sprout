@@ -297,6 +297,10 @@ export function activate(context: vscode.ExtensionContext) {
       const relativeFilePath = path.relative(repoPath, activeFileUri.fsPath);
 
       const solutionCommand = `git --git-dir=${path.join(repoPath, '.git')} show ${process.env.COMMIT}:${relativeFilePath}`;
+      const currentCommand = `cat ${path.join(repoPath, relativeFilePath)}`;
+
+      let solutionContent: string;
+      let currentContent: string;
 
       try {
           const solutionResult = await new Promise<string>((resolve, reject) => {
@@ -516,14 +520,7 @@ function getWebviewContent(
       </button>
     `;
 
-    let showSolutionHtml = `
-      <button id="showSolutionButton">
-          Show Hint: Reveal solution in a git diff view
-      </button>
-    `;
-
     htmlContent = htmlContent.replace('{{HIGHLIGHT_LINES_BUTTON}}', highlightLinesHtml);
-    htmlContent = htmlContent.replace('{{SHOW_SOLUTION_BUTTON}}', showSolutionHtml);
     htmlContent = htmlContent.replace('{{HAS_FILE_TO_OPEN}}', configData.codeFileToEdit ? 'true' : 'false');
 
     return htmlContent;
