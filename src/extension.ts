@@ -220,20 +220,45 @@ export function activate(context: vscode.ExtensionContext) {
 
     if (isCodeFileOpen)
     {
-        if (!currentPanel) {
-            currentPanel = vscode.window.createWebviewPanel(
-                'myRightPanel',
-                'My Right Panel',
-                { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
-                { enableScripts: true }
-            );
-
-            currentPanel.onDidDispose(() => {
-                currentPanel = undefined;
-            }, null, context.subscriptions);
-        } else {
-            currentPanel.reveal(vscode.ViewColumn.Two, true);
+        if (currentPanel) {
+            currentPanel.dispose();
         }
+
+        currentPanel = vscode.window.createWebviewPanel(
+            'myRightPanel',
+            'My Right Panel',
+            { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
+            { enableScripts: true }
+        );
+
+        currentPanel.webview.onDidReceiveMessage(
+            message => {
+                switch (message.command) {
+                    case 'nextItem':
+                        vscode.commands.executeCommand('sprout.goToNextItem', message.label);
+                        break;
+                    case 'prevItem':
+                        vscode.commands.executeCommand('sprout.goToPrevItem', message.label);
+                        break;
+                    case 'showSolution':
+                        vscode.commands.executeCommand('sprout.showSolution', message.label);
+                        break;
+                    case 'getHintText':
+                        vscode.commands.executeCommand('sprout.showHintPopup', message.label);
+                        break;
+                    case 'toggleHighlight':
+                        vscode.commands.executeCommand('sprout.toggleHighlight', message.label, message.active);
+                        break;
+                }
+            },
+            undefined,
+            context.subscriptions
+        );
+
+        currentPanel.onDidDispose(() => {
+            currentPanel = undefined;
+        }, null, context.subscriptions);
+
     }
     else
     {
@@ -446,7 +471,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 function showInlineHint(editor: vscode.TextEditor, range: [number, number], hintText: string) {
   const [startLine, endLine] = range;
-  const startPos = new vscode.Position(endLine, 0);
+  const startPos = new vscode.Position(startLine, 0);
 
   const virtualDocUri = vscode.Uri.parse(`sprouthint:${editor.document.fileName}`);
   hintTexts.set(virtualDocUri.path, hintText);
