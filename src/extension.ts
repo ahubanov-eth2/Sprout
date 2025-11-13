@@ -361,8 +361,6 @@ export function activate(context: vscode.ExtensionContext) {
           fs.writeFileSync(solutionTempFilePath, solutionLines.join('\n'));
 
           const title = `Solution for lines ${startLine}-${endLine} of ${path.basename(activeFileUri.fsPath)}`;
-
-          await vscode.commands.executeCommand('vscode.open', currentTempFileUri, { preview: false });
           await vscode.commands.executeCommand(
             'vscode.diff',
             currentTempFileUri,
@@ -370,11 +368,6 @@ export function activate(context: vscode.ExtensionContext) {
             title,
             { viewColumn: vscode.ViewColumn.Active, preview: false }
           );
-
-          setTimeout(() => {
-              fs.unlink(currentTempFilePath, (err) => err && console.error('Failed to delete temp file:', err));
-              fs.unlink(solutionTempFilePath, (err) => err && console.error('Failed to delete temp file:', err));
-          }, 30000);
 
       } catch (e: any) {
           vscode.window.showErrorMessage(e.message);
