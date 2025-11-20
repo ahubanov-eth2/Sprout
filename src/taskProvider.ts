@@ -19,7 +19,7 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
       vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
       'data',
       'structured-courses', 
-      'task1'
+      'course1'
     );
     
     const rootMetaPath = path.join(coursePath.fsPath, 'course-info.yaml');

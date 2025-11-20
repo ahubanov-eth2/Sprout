@@ -18,7 +18,7 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "icon": "icons.png",
+          "icon": "logo-green.png",
           "id": "myLeftPanel",
           "title": "Task List"
         }
