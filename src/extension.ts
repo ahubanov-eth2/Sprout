@@ -23,7 +23,8 @@ interface ConfigData {
   setupData? : any,
   taskDescriptionFile? : string,
   codeFileToEdit? : string,
-  hintLineRanges? : Array<[number, number]>,
+  hintLineRangesCurrent? : Array<[number, number]>,
+  hintLineRangesSolution? : Array<[number, number]>,
   hint? : string
 }
 
@@ -146,7 +147,7 @@ export function activate(context: vscode.ExtensionContext) {
           configData = JSON.parse(config);
       }
 
-      const lineRanges = configData.hintLineRanges as [number, number][];
+      const lineRanges = configData.hintLineRangesCurrent as [number, number][];
       const linesToHighlight = (lineRanges || []).map(([startLine, endLine]) => ({
           range: new vscode.Range(startLine - 1, 0, endLine - 2, 1000000)
       }));
@@ -313,10 +314,14 @@ export function activate(context: vscode.ExtensionContext) {
         configData = JSON.parse(config);
       }
 
-      const lineRanges = configData.hintLineRanges as [number, number][] 
+      const lineRangesCurrent = configData.hintLineRangesCurrent as [number, number][]
+      const lineRangesSolution = configData.hintLineRangesSolution as [number, number][]  
 
-      const startLine = lineRanges[0][0] - 1
-      const endLine = lineRanges[lineRanges.length - 1][1] 
+      const startLineCurrent = lineRangesCurrent[0][0] - 1
+      const endLineCurrent = lineRangesCurrent[lineRangesCurrent.length - 1][1] 
+
+      const startLineSolution = lineRangesSolution[0][0] - 1
+      const endLineSolution = lineRangesSolution[lineRangesSolution.length - 1][1] 
 
       const repoPath = fileProvider.getRepoPath() as string;
       const relativeFilePath = path.relative(repoPath, activeFileUri.fsPath);
@@ -349,8 +354,8 @@ export function activate(context: vscode.ExtensionContext) {
           solutionContent = solutionResult;
           currentContent = currentResult;
 
-          const currentLines = currentContent.split('\n').slice(startLine, endLine);
-          const solutionLines = solutionContent.split('\n').slice(startLine, endLine);
+          const currentLines = currentContent.split('\n').slice(startLineCurrent, endLineCurrent);
+          const solutionLines = solutionContent.split('\n').slice(startLineSolution, endLineSolution);
 
           const currentTempFilePath = path.join(os.tmpdir(), `current-temp-${path.basename(relativeFilePath)}`);
           const solutionTempFilePath = path.join(os.tmpdir(), `solution-temp-${path.basename(relativeFilePath)}`);
@@ -360,7 +365,7 @@ export function activate(context: vscode.ExtensionContext) {
           fs.writeFileSync(currentTempFilePath, currentLines.join('\n'));
           fs.writeFileSync(solutionTempFilePath, solutionLines.join('\n'));
 
-          const title = `Solution for lines ${startLine}-${endLine} of ${path.basename(activeFileUri.fsPath)}`;
+          const title = `Solution for lines ${startLineCurrent}-${endLineCurrent} of ${path.basename(activeFileUri.fsPath)}`;
           await vscode.commands.executeCommand(
             'vscode.diff',
             currentTempFileUri,
