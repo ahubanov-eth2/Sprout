@@ -12,6 +12,7 @@ const codeLensChangeEmitter = new vscode.EventEmitter<void>();
 let currentPanel: vscode.WebviewPanel | undefined;
 let onDidEndTaskDisposable: vscode.Disposable | undefined;
 let activeFileUri: vscode.Uri | undefined;
+let tempFileCopyUri: vscode.Uri | undefined;
 
 const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
@@ -79,6 +80,25 @@ export function activate(context: vscode.ExtensionContext) {
       fileProvider.setRepoPath(projectsDirectory);
   }
 
+  const warningHeaderDecorationType = vscode.window.createTextEditorDecorationType({
+      isWholeLine: true,
+      backgroundColor: new vscode.ThemeColor('editor.background'),
+      before: {
+          contentText: "⚠️ This is the original code file discounting changes made by you (if any)",
+          color: new vscode.ThemeColor('errorForeground'),
+          fontWeight: 'bold',
+          fontStyle: 'italic',
+          margin: '0 0 0 20px',
+      },
+      after: {
+          contentText: " ⚠️",
+          color: new vscode.ThemeColor('errorForeground'),
+      },
+      borderWidth: '0 0 1px 0',
+      borderColor: new vscode.ThemeColor('errorForeground'),
+      borderStyle: 'solid'
+  });
+
   function revealPanel(){
     if (currentPanel) {
         currentPanel.reveal(vscode.ViewColumn.One, true);
@@ -120,21 +140,9 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  const toggleHighlightDisposable = vscode.commands.registerCommand('sprout.toggleHighlight', async (label: string, active: boolean) => {
-      if (!activeFileUri) {
+  const toggleHighlightDisposable = vscode.commands.registerCommand('sprout.toggleHighlight', async (label: string) => {
+      if (!tempFileCopyUri) {
           vscode.window.showWarningMessage('No active code editor found.');
-          return;
-      }
-
-      const codeEditor = vscode.window.visibleTextEditors.find(
-          editor => editor.document.uri.toString() === activeFileUri?.toString()
-      );
-      if (!codeEditor) return;
-
-      if (!active) {
-          codeEditor.setDecorations(hintDecorationType, []);
-          clickableHintLines.delete(codeEditor.document.uri.toString());
-          codeLensChangeEmitter.fire();
           return;
       }
 
@@ -146,17 +154,40 @@ export function activate(context: vscode.ExtensionContext) {
           const config = fs.readFileSync(currentItem.configFilePath, "utf8");
           configData = JSON.parse(config);
       }
+      const hintText = configData.hint || '';
 
+      const tempDoc = await vscode.workspace.openTextDocument(tempFileCopyUri);
+      const codeEditor = await vscode.window.showTextDocument(tempDoc, {
+        viewColumn: vscode.ViewColumn.One,
+        preserveFocus: false,  
+        preview: false          
+      });
+
+      const hintDoc = await vscode.workspace.openTextDocument({
+        content: hintText,
+        language: 'markdown'
+      });
+
+      await vscode.window.showTextDocument(hintDoc, {
+        viewColumn: vscode.ViewColumn.Two,
+        preserveFocus: true,
+        preview: false
+      });
+
+      const firstLineRange = new vscode.Range(0, 0, 0, 0);
+      codeEditor.setDecorations(warningHeaderDecorationType, [firstLineRange]);
+
+      const lineOffset = 1;
       const lineRanges = configData.hintLineRangesCurrent as [number, number][];
       const linesToHighlight = (lineRanges || []).map(([startLine, endLine]) => ({
-          range: new vscode.Range(startLine - 1, 0, endLine - 2, 1000000)
+          range: new vscode.Range((startLine - 1) + lineOffset, 0, (endLine - 2) + lineOffset, 1000000)
       }));
 
       codeEditor.setDecorations(hintDecorationType, linesToHighlight);
 
       clickableHintLines.set(codeEditor.document.uri.toString(), {
         lines: lineRanges,
-        hintText: configData.hint || '',
+        hintText: hintText,
         label: label
       });
 
@@ -164,7 +195,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (lineRanges && lineRanges.length > 0) {
         const [firstStart] = lineRanges[0];
-        const targetPos = new vscode.Position(firstStart - 1, 0);
+        const targetPos = new vscode.Position(firstStart - 1 + lineOffset, 0);
         const targetRange = new vscode.Range(targetPos, targetPos);
 
         codeEditor.revealRange(targetRange, vscode.TextEditorRevealType.AtTop);
@@ -190,6 +221,16 @@ export function activate(context: vscode.ExtensionContext) {
       if (repoDirectory) {
           const fileUri = vscode.Uri.file(path.join(repoDirectory, configData.codeFileToEdit));
           try {
+              const tempFileName = `temp_${Date.now()}_${path.basename(fileUri.fsPath)}`;
+              const tempFilePath = path.join(os.tmpdir(), tempFileName);
+
+              const tsIgnoreHeader = "// @ts-nocheck\n"; 
+              const originalContent = fs.readFileSync(fileUri.fsPath, 'utf-8');
+              const tempFileContent = tsIgnoreHeader + originalContent;
+
+              tempFileCopyUri = vscode.Uri.file(tempFilePath);
+              fs.writeFileSync(tempFileCopyUri.fsPath, tempFileContent);
+
               const doc = await vscode.workspace.openTextDocument(fileUri);
               await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
               activeFileUri = fileUri; 
@@ -385,8 +426,6 @@ export function activate(context: vscode.ExtensionContext) {
   })
 
   const showHintPopupDisposable = vscode.commands.registerCommand('sprout.showHintPopup', async (label: string) => {
-    vscode.commands.executeCommand('sprout.highlightLinesHint', label);
-    
     const currentItem = leftProvider.findLeafByLabel(label);
 
     let configData: ConfigData = {};
