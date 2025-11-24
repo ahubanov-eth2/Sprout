@@ -126,7 +126,7 @@ export function activate(context: vscode.ExtensionContext) {
                         vscode.commands.executeCommand('sprout.showHintPopup', message.label);
                         break;
                     case 'toggleHighlight':
-                        vscode.commands.executeCommand('sprout.toggleHighlight', message.label, message.active);
+                        vscode.commands.executeCommand('sprout.toggleHighlight', message.label);
                         break;
                 }
             },
@@ -163,10 +163,10 @@ export function activate(context: vscode.ExtensionContext) {
         preview: false          
       });
 
-      const hintDoc = await vscode.workspace.openTextDocument({
-        content: hintText,
-        language: 'markdown'
-      });
+      const hintUri = vscode.Uri.parse(
+          `sprout-hint:${label}.md?${encodeURIComponent(hintText)}`
+      );
+      const hintDoc = await vscode.workspace.openTextDocument(hintUri);
 
       await vscode.window.showTextDocument(hintDoc, {
         viewColumn: vscode.ViewColumn.Two,
@@ -174,15 +174,19 @@ export function activate(context: vscode.ExtensionContext) {
         preview: false
       });
 
-      const firstLineRange = new vscode.Range(0, 0, 0, 0);
-      codeEditor.setDecorations(warningHeaderDecorationType, [firstLineRange]);
-
       const lineOffset = 1;
       const lineRanges = configData.hintLineRangesCurrent as [number, number][];
       const linesToHighlight = (lineRanges || []).map(([startLine, endLine]) => ({
           range: new vscode.Range((startLine - 1) + lineOffset, 0, (endLine - 2) + lineOffset, 1000000)
       }));
 
+      const firstHighlightedStart = (lineRanges[0][0] - 1) + lineOffset;
+      const headerRange = new vscode.Range(
+          new vscode.Position(firstHighlightedStart, 0),
+          new vscode.Position(firstHighlightedStart, 0)
+      );
+
+      codeEditor.setDecorations(warningHeaderDecorationType, [headerRange]);
       codeEditor.setDecorations(hintDecorationType, linesToHighlight);
 
       clickableHintLines.set(codeEditor.document.uri.toString(), {
@@ -190,8 +194,6 @@ export function activate(context: vscode.ExtensionContext) {
         hintText: hintText,
         label: label
       });
-
-      codeLensChangeEmitter.fire();
 
       if (lineRanges && lineRanges.length > 0) {
         const [firstStart] = lineRanges[0];
@@ -289,7 +291,7 @@ export function activate(context: vscode.ExtensionContext) {
                         vscode.commands.executeCommand('sprout.showHintPopup', message.label);
                         break;
                     case 'toggleHighlight':
-                        vscode.commands.executeCommand('sprout.toggleHighlight', message.label, message.active);
+                        vscode.commands.executeCommand('sprout.toggleHighlight', message.label);
                         break;
                 }
             },
@@ -341,7 +343,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   const showSolutionDisposable = vscode.commands.registerCommand('sprout.showSolution', async (label: string) => {
-      if (!activeFileUri) {
+      if (!tempFileCopyUri || !activeFileUri) {
           vscode.window.showWarningMessage('No active code editor found.');
           return;
       }
@@ -368,11 +370,8 @@ export function activate(context: vscode.ExtensionContext) {
       const relativeFilePath = path.relative(repoPath, activeFileUri.fsPath);
 
       const solutionCommand = `git --git-dir=${path.join(repoPath, '.git')} show ${process.env.COMMIT}:${relativeFilePath}`;
-      const currentCommand = `cat ${path.join(repoPath, relativeFilePath)}`;
 
       let solutionContent: string;
-      let currentContent: string;
-
       try {
           const solutionResult = await new Promise<string>((resolve, reject) => {
               exec(solutionCommand, { cwd: repoPath }, (err, stdout, stderr) => {
@@ -383,30 +382,22 @@ export function activate(context: vscode.ExtensionContext) {
               });
           });
 
-          const currentResult = await new Promise<string>((resolve, reject) => {
-              exec(currentCommand, { cwd: repoPath }, (err, stdout, stderr) => {
-                  if (err) {
-                      reject(new Error(`Failed to get current content: ${stderr}`));
-                  }
-                  resolve(stdout);
-              });
-          });
-
           solutionContent = solutionResult;
-          currentContent = currentResult;
+          const currentContent = fs.readFileSync(tempFileCopyUri.fsPath, 'utf8');
 
           const currentLines = currentContent.split('\n').slice(startLineCurrent, endLineCurrent);
           const solutionLines = solutionContent.split('\n').slice(startLineSolution, endLineSolution);
 
           const currentTempFilePath = path.join(os.tmpdir(), `current-temp-${path.basename(relativeFilePath)}`);
           const solutionTempFilePath = path.join(os.tmpdir(), `solution-temp-${path.basename(relativeFilePath)}`);
+
           const currentTempFileUri = vscode.Uri.file(currentTempFilePath);
           const solutionTempFileUri = vscode.Uri.file(solutionTempFilePath);
           
           fs.writeFileSync(currentTempFilePath, currentLines.join('\n'));
           fs.writeFileSync(solutionTempFilePath, solutionLines.join('\n'));
 
-          const title = `Solution for lines ${startLineCurrent}-${endLineCurrent} of ${path.basename(activeFileUri.fsPath)}`;
+          const title = `Original vs Solution (${path.basename(relativeFilePath)})`;
           await vscode.commands.executeCommand(
             'vscode.diff',
             currentTempFileUri,
@@ -491,6 +482,12 @@ export function activate(context: vscode.ExtensionContext) {
     onDidChangeCodeLenses: codeLensChangeEmitter.event
   });
 
+  const hintSchema = vscode.workspace.registerTextDocumentContentProvider('sprout-hint', {
+      provideTextDocumentContent(uri) {
+          return decodeURIComponent(uri.query);
+      }
+  });
+
   context.subscriptions.push(
     nextItemDisposable, 
     prevItemDisposable, 
@@ -502,7 +499,8 @@ export function activate(context: vscode.ExtensionContext) {
     codeLensProviderDisposable,
     toggleHighlightDisposable,
     sectionSelectedDisposable,
-    vscode.workspace.registerTextDocumentContentProvider(scheme, provider)
+    vscode.workspace.registerTextDocumentContentProvider(scheme, provider),
+    hintSchema
   );
 }
 

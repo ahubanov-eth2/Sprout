@@ -273,20 +273,12 @@
 
                 if (highlightButton) {
                     highlightButton.addEventListener('click', () => {
-                        const isActive = highlightButton.classList.toggle('active');
-
-                        if (isActive) {
-                            highlightButton.textContent = 'Hide Hint: Remove highlighting';
-                            highlightButton.style.backgroundColor = '#02006c';
-                        } else {
-                            highlightButton.textContent = 'Show Hint: Highlight lines where changes are needed';
-                            highlightButton.style.backgroundColor = '#0078d4';
-                        }
+                        highlightButton.textContent = 'Show Hint: Highlight lines where changes are needed';
+                        highlightButton.style.backgroundColor = '#0078d4';
 
                         vscode.postMessage({
                             command: 'toggleHighlight',
                             label: currentItemLabel,
-                            active: isActive
                         });
                     });
                 }
