@@ -99,6 +99,7 @@
             align-items: flex-end;
             float: right;
             margin-right: 50px;
+            margin-bottom: 80px;
         }
 
         .additional-buttons {
@@ -227,6 +228,8 @@
 
         .bottom-drawer button {
             width: 100%;
+            font-size: 18px;
+            color: white;
         }
 
     </style>
@@ -323,10 +326,22 @@
                 const hasFileToOpen = document.body.dataset.hasFile === 'true';
                 const highlightButton = document.getElementById('highlightLinesButton');
                 const solutionButton = document.getElementById('showSolutionButton');
+
+                const drawer = document.getElementById('bottomDrawer');
+                const handle = document.getElementById('drawerHandle');
+
                 if (!hasFileToOpen) {
                     highlightButton?.remove();
                     solutionButton?.remove();
+
+                    drawer.style.display = 'none'
+                    handle.style.display = 'none'
                 }
+
+                handle.addEventListener('click', () => {
+                    const isOpen = drawer.classList.toggle('open');
+                    handle.textContent = isOpen ? "▼ Hide" : "▲ Discover Help";
+                });
 
                 if (highlightButton) {
                     highlightButton.addEventListener('click', () => {
@@ -407,14 +422,6 @@
                         command: 'prevItem',
                         label: currentItemLabel
                     });
-                });
-
-                const drawer = document.getElementById('bottomDrawer');
-                const handle = document.getElementById('drawerHandle');
-
-                handle.addEventListener('click', () => {
-                    const isOpen = drawer.classList.toggle('open');
-                    handle.textContent = isOpen ? "▼ Hide" : "▲ Discover Help";
                 });
             });
 
