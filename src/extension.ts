@@ -18,7 +18,12 @@ const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
 });
 
-const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean }>();
+const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
+
+type PersistentLens = {
+    line: number;
+    explanation: string; 
+};
 
 interface ConfigData {
   setupData? : any,
@@ -27,6 +32,7 @@ interface ConfigData {
   hintLineRangesCurrent? : Array<[number, number]>,
   hintLineRangesSolution? : Array<[number, number]>,
   hint? : string
+  persistentLenses? : PersistentLens[]
 }
 
 function getWorkspaceRoot(): string {
@@ -206,7 +212,8 @@ export function activate(context: vscode.ExtensionContext) {
         lines: lineRanges,
         hintText: hintText,
         label: label,
-        isTemp: true  
+        isTemp: true,
+        persistent_lenses: []  
       });
 
       if (lineRanges && lineRanges.length > 0) {
@@ -230,6 +237,33 @@ export function activate(context: vscode.ExtensionContext) {
     {
       const config = fs.readFileSync(item.configFilePath, "utf8");
       configData = JSON.parse(config);
+    }
+
+    const codeEditor = vscode.window.visibleTextEditors.find(
+      editor => editor.viewColumn === vscode.ViewColumn.One
+    );
+
+    if (configData.persistentLenses) {
+      const persistentLensInfo = configData.persistentLenses.map(lens => ({
+        line: lens.line,
+        explanation: lens.explanation
+      }));
+
+      if (codeEditor) {
+        const existing_or_default = clickableHintLines.get(codeEditor.document.uri.toString()) || {
+          lines: [],
+          hintText: '',
+          label: '',
+          isTemp: false,
+          persistent_lenses: []
+        };
+  
+        clickableHintLines.set(codeEditor.document.uri.toString(), {
+          ...existing_or_default,
+          persistent_lenses: persistentLensInfo
+        });
+      }
+      
     }
 
     let isCodeFileOpen = false;
@@ -466,33 +500,60 @@ export function activate(context: vscode.ExtensionContext) {
       const info = clickableHintLines.get(uri.toString());
       if (!editor || !info) return;
 
-      const rangeClicked = info.lines.find(([start, end]) => line >= start && line <= end);
-      if (rangeClicked) {
-        showInlineHint(editor, rangeClicked, info.hintText);
+      const persistentLens = info.persistent_lenses.find(lens => lens.line === line);
+      if (persistentLens) {
+        const line_to_show = line - 1;
+        showInlineHint(editor, line_to_show, persistentLens.explanation);
+        return;
       }
+
+      // const rangeClicked = info.lines.find(([start, end]) => line >= start && line <= end);
+      // if (rangeClicked) {
+      //   showInlineHint(editor, rangeClicked, info.hintText);
+      // }
     }
   );
 
   const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, {
     provideCodeLenses(document) {
       const hintInfo = clickableHintLines.get(document.uri.toString());
-      if (!hintInfo || hintInfo.isTemp) return [];
+      const lenses: vscode.CodeLens[] = [];
 
-      const [firstStart] = hintInfo.lines[0];
-      const range = new vscode.Range(firstStart - 1, 0, firstStart - 1, 0);
+      if (!hintInfo) return lenses;
 
-      return [
-        new vscode.CodeLens(range, {
-          title: '💬 Hint',
-          command: 'sprout.showInlineHintFromLens',
-          arguments: [document.uri, firstStart]
-        }),
-        new vscode.CodeLens(range, {
-          title: '🧩 Show Solution',
-          command: 'sprout.showSolution',
-          arguments: [hintInfo.label]
-        })
-      ];
+      if (hintInfo.persistent_lenses) {
+        for (const lens of hintInfo.persistent_lenses) {
+          const range = new vscode.Range(lens.line - 1, 0, lens.line - 1, 0);
+          lenses.push(
+            new vscode.CodeLens(range, {
+              title: "💬 Learn more",
+              command: 'sprout.showInlineHintFromLens',
+              arguments: [document.uri, lens.line]
+            })
+          );
+        }
+      }
+
+      // if (!hintInfo.isTemp)
+      // {
+      //   const [firstStart] = hintInfo.lines[0];
+      //   const range = new vscode.Range(firstStart - 1, 0, firstStart - 1, 0);
+
+      //   lenses.push(
+      //     new vscode.CodeLens(range, {
+      //       title: '💬 Hint',
+      //       command: 'sprout.showInlineHintFromLens',
+      //       arguments: [document.uri, firstStart]
+      //     }),
+      //     new vscode.CodeLens(range, {
+      //       title: '🧩 Show Solution',
+      //       command: 'sprout.showSolution',
+      //       arguments: [hintInfo.label]
+      //     })
+      //   );
+      // }
+
+      return lenses;
     },
     onDidChangeCodeLenses: codeLensChangeEmitter.event
   });
@@ -519,9 +580,8 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-function showInlineHint(editor: vscode.TextEditor, range: [number, number], hintText: string) {
-  const [startLine, endLine] = range;
-  const startPos = new vscode.Position(startLine, 0);
+function showInlineHint(editor: vscode.TextEditor, line: number, hintText: string) {
+  const startPos = new vscode.Position(line, 0);
 
   const virtualDocUri = vscode.Uri.parse(`sprouthint:${editor.document.fileName}`);
   hintTexts.set(virtualDocUri.path, hintText);

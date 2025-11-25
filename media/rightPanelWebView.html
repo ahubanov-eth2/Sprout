@@ -180,26 +180,6 @@
             background-color: #007acc;
         }
 
-        /* Bottom slide-up drawer */
-        .bottom-drawer {
-            position: fixed;
-            bottom: -200px; /* Hidden initially */
-            left: 0;
-            width: 100%;
-            background-color: var(--vscode-editor-background);
-            border-top: 1px solid var(--vscode-editorGroup-border);
-            padding: 20px;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.4);
-            transition: bottom 0.35s ease;
-            z-index: 500;
-        }
-
-        /* Drawer expanded state */
-        .bottom-drawer.open {
-            bottom: 0;
-        }
-
-        /* Drawer handle */
         .drawer-handle {
             position: fixed;
             bottom: 0;
@@ -215,21 +195,41 @@
             user-select: none;
         }
 
+        .bottom-drawer {
+            position: fixed;
+            bottom: -200px; 
+            left: 0;
+            width: 100%;
+            background-color: var(--vscode-editor-background);
+            border-top: 1px solid var(--vscode-editorGroup-border);
+            padding: 20px 20px 60px 20px; 
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.4);
+            transition: bottom 0.35s ease;
+            z-index: 500;
+        }
+
+        .bottom-drawer.open {
+            bottom: 0;
+        }
+
         .drawer-handle:hover {
             background-color: var(--vscode-button-hoverBackground);
         }
 
-        /* Buttons inside drawer */
         .bottom-drawer .drawer-buttons {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
         }
 
         .bottom-drawer button {
             width: 100%;
             font-size: 18px;
             color: white;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
 
     </style>
