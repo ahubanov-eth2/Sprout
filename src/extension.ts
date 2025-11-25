@@ -18,7 +18,7 @@ const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
 });
 
-const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string }>();
+const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean }>();
 
 interface ConfigData {
   setupData? : any,
@@ -205,7 +205,8 @@ export function activate(context: vscode.ExtensionContext) {
       clickableHintLines.set(codeEditor.document.uri.toString(), {
         lines: lineRanges,
         hintText: hintText,
-        label: label
+        label: label,
+        isTemp: true  
       });
 
       if (lineRanges && lineRanges.length > 0) {
@@ -475,7 +476,7 @@ export function activate(context: vscode.ExtensionContext) {
   const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, {
     provideCodeLenses(document) {
       const hintInfo = clickableHintLines.get(document.uri.toString());
-      if (!hintInfo) return [];
+      if (!hintInfo || hintInfo.isTemp) return [];
 
       const [firstStart] = hintInfo.lines[0];
       const range = new vscode.Range(firstStart - 1, 0, firstStart - 1, 0);
