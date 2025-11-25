@@ -179,6 +179,56 @@
             background-color: #007acc;
         }
 
+        /* Bottom slide-up drawer */
+        .bottom-drawer {
+            position: fixed;
+            bottom: -200px; /* Hidden initially */
+            left: 0;
+            width: 100%;
+            background-color: var(--vscode-editor-background);
+            border-top: 1px solid var(--vscode-editorGroup-border);
+            padding: 20px;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.4);
+            transition: bottom 0.35s ease;
+            z-index: 500;
+        }
+
+        /* Drawer expanded state */
+        .bottom-drawer.open {
+            bottom: 0;
+        }
+
+        /* Drawer handle */
+        .drawer-handle {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            padding: 6px 14px;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            z-index: 600;
+            font-size: 18px;
+            user-select: none;
+        }
+
+        .drawer-handle:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+
+        /* Buttons inside drawer */
+        .bottom-drawer .drawer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bottom-drawer button {
+            width: 100%;
+        }
+
     </style>
     </head>
     <body data-item-label="{{LABEL}}" data-has-file="{{HAS_FILE_TO_OPEN}}" style="font-family: sans-serif; padding: 1em;">  
@@ -204,9 +254,13 @@
         <h2>{{TITLE}}</h2>
         <p>{{DESCRIPTION}}</p>
 
-        <div class="navigation-buttons additional-buttons">
-            {{HIGHLIGHT_LINES_BUTTON}}
-            {{SHOW_SOLUTION_BUTTON}}
+        <div class="drawer-handle" id="drawerHandle">▲ Discover Help</div>
+
+        <div class="bottom-drawer" id="bottomDrawer">
+            <div class="drawer-buttons">
+                {{HIGHLIGHT_LINES_BUTTON}}
+                {{SHOW_SOLUTION_BUTTON}}
+            </div>
         </div>
 
         <script>
@@ -310,6 +364,8 @@
                 });
 
                 document.getElementById('nextButton').addEventListener('click', () => {
+
+                    closeDrawer();
                     const highlightButton = document.getElementById('highlightLinesButton');
                     
                     if (highlightButton && highlightButton.classList.contains('active')) {
@@ -331,6 +387,8 @@
                 });
 
                 document.getElementById('prevButton').addEventListener('click', () => {
+
+                    closeDrawer();
                     const highlightButton = document.getElementById('highlightLinesButton');
                     
                     if (highlightButton && highlightButton.classList.contains('active')) {
@@ -349,6 +407,14 @@
                         command: 'prevItem',
                         label: currentItemLabel
                     });
+                });
+
+                const drawer = document.getElementById('bottomDrawer');
+                const handle = document.getElementById('drawerHandle');
+
+                handle.addEventListener('click', () => {
+                    const isOpen = drawer.classList.toggle('open');
+                    handle.textContent = isOpen ? "▼ Hide" : "▲ Discover Help";
                 });
             });
 
@@ -375,6 +441,16 @@
                 setTimeout(() => {
                     document.addEventListener('click', dismissListener);
                 }, 10);
+            }
+
+            function closeDrawer() {
+                const drawer = document.getElementById('bottomDrawer');
+                const handle = document.getElementById('drawerHandle');
+
+                if (drawer.classList.contains('open')) {
+                    drawer.classList.remove('open');
+                    handle.textContent = "▲ More";
+                }
             }
 
         </script>
