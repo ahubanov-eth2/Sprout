@@ -85,18 +85,31 @@ export function activate(context: vscode.ExtensionContext) {
       backgroundColor: new vscode.ThemeColor('editor.background'),
       before: {
           contentText: "⚠️ This is the original code file discounting changes made by you (if any)",
-          color: new vscode.ThemeColor('errorForeground'),
+          color: new vscode.ThemeColor('editorWarning.foreground'),
           fontWeight: 'bold',
           fontStyle: 'italic',
           margin: '0 0 0 20px',
       },
       after: {
           contentText: " ⚠️",
-          color: new vscode.ThemeColor('errorForeground'),
+          color: new vscode.ThemeColor('editorWarning.foreground'),
       },
       borderWidth: '0 0 1px 0',
-      borderColor: new vscode.ThemeColor('errorForeground'),
+      borderColor: new vscode.ThemeColor('editorWarning.foreground'),
       borderStyle: 'solid'
+  });
+
+  vscode.workspace.onDidChangeTextDocument(event => {
+      if (tempFileCopyUri && event.document.uri.toString() === tempFileCopyUri.toString()) {
+          const edit = new vscode.WorkspaceEdit();
+
+          edit.replace(
+              event.document.uri,
+              new vscode.Range(0, 0, event.document.lineCount, 0),
+              event.document.getText()
+          );
+          vscode.workspace.applyEdit(edit);
+      }
   });
 
   function revealPanel(){
@@ -201,6 +214,7 @@ export function activate(context: vscode.ExtensionContext) {
         const targetRange = new vscode.Range(targetPos, targetPos);
 
         codeEditor.revealRange(targetRange, vscode.TextEditorRevealType.AtTop);
+        codeEditor.selection = new vscode.Selection(targetPos, targetPos);
       }
   });
 
@@ -510,7 +524,6 @@ function showInlineHint(editor: vscode.TextEditor, range: [number, number], hint
 
   const virtualDocUri = vscode.Uri.parse(`sprouthint:${editor.document.fileName}`);
   hintTexts.set(virtualDocUri.path, hintText);
-  provider.onDidChangeEmitter.fire(virtualDocUri);
 
   vscode.commands.executeCommand(
     'editor.action.peekLocations',
@@ -584,11 +597,19 @@ function getWebviewContent(
 
     let highlightLinesHtml = `
       <button id="highlightLinesButton">
-          Show Hint: Highlight lines where changes are needed 
+          Show hint and highlight lines where changes are needed
       </button>
     `;
 
+    let showSolutionHtml = `
+      <button id="showSolutionButton">
+          Show solution as a git diff 
+      </button>
+    `;
+
+
     htmlContent = htmlContent.replace('{{HIGHLIGHT_LINES_BUTTON}}', highlightLinesHtml);
+    htmlContent = htmlContent.replace('{{SHOW_SOLUTION_BUTTON}}', showSolutionHtml);
     htmlContent = htmlContent.replace('{{HAS_FILE_TO_OPEN}}', configData.codeFileToEdit ? 'true' : 'false');
 
     return htmlContent;

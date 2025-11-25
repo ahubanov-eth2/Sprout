@@ -129,12 +129,12 @@
             background-color: #007ede;
         }
 
-        #highlightLinesButton {
+        #highlightLinesButton, #showSolutionButton {
             background-color: #0078d4;
             border: none;
         }
 
-        #highlightLinesButton:hover {
+        #highlightLinesButton:hover, #showSolutionButton:hover {
             background-color: #007ede;
         }
 
@@ -206,6 +206,7 @@
 
         <div class="navigation-buttons additional-buttons">
             {{HIGHLIGHT_LINES_BUTTON}}
+            {{SHOW_SOLUTION_BUTTON}}
         </div>
 
         <script>
@@ -267,17 +268,31 @@
 
                 const hasFileToOpen = document.body.dataset.hasFile === 'true';
                 const highlightButton = document.getElementById('highlightLinesButton');
+                const solutionButton = document.getElementById('showSolutionButton');
                 if (!hasFileToOpen) {
                     highlightButton?.remove();
+                    solutionButton?.remove();
                 }
 
                 if (highlightButton) {
                     highlightButton.addEventListener('click', () => {
-                        highlightButton.textContent = 'Show Hint: Highlight lines where changes are needed';
+                        highlightButton.textContent = 'Show hint and highlight lines where changes are needed';
                         highlightButton.style.backgroundColor = '#0078d4';
 
                         vscode.postMessage({
                             command: 'toggleHighlight',
+                            label: currentItemLabel,
+                        });
+                    });
+                }
+
+                if (solutionButton) {
+                    solutionButton.addEventListener('click', () => {
+                        solutionButton.textContent = 'Show solution as a git diff';
+                        solutionButton.style.backgroundColor = '#0078d4';
+
+                        vscode.postMessage({
+                            command: 'showSolution',
                             label: currentItemLabel,
                         });
                     });
