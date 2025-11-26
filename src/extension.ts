@@ -197,10 +197,10 @@ export function activate(context: vscode.ExtensionContext) {
       const lineOffset = 1;
       const lineRanges = configData.hintLineRangesCurrent as [number, number][];
       const linesToHighlight = (lineRanges || []).map(([startLine, endLine]) => ({
-          range: new vscode.Range(startLine + lineOffset - 1, 0, endLine + lineOffset, 1000000) // the -1 is because of the warning message that is to be added
+          range: new vscode.Range(startLine - 1, 0, endLine, 1000000) // the -1 is because of the warning message that is to be added
       }));
 
-      const firstHighlightedStart = (lineRanges[0][0] - 1) + lineOffset;
+      const firstHighlightedStart = (lineRanges[0][0] - 1);
       const headerRange = new vscode.Range(
           new vscode.Position(firstHighlightedStart, 0),
           new vscode.Position(firstHighlightedStart, 0)
@@ -240,35 +240,6 @@ export function activate(context: vscode.ExtensionContext) {
       configData = JSON.parse(config);
     }
 
-    const codeEditor = vscode.window.visibleTextEditors.find(
-      editor => editor.viewColumn === vscode.ViewColumn.One
-    );
-
-    if (configData.persistentLenses) {
-      const persistentLensInfo = configData.persistentLenses.map(lens => ({
-        line: lens.line,
-        explanation: lens.explanation
-      }));
-
-      if (codeEditor) {
-        const existing_or_default = clickableHintLines.get(codeEditor.document.uri.toString()) || {
-          lines: [],
-          hintText: '',
-          label: '',
-          isTemp: false,
-          persistent_lenses: []
-        };
-  
-        clickableHintLines.set(codeEditor.document.uri.toString(), {
-          ...existing_or_default,
-          persistent_lenses: persistentLensInfo
-        });
-
-        codeLensChangeEmitter.fire();
-      }
-      
-    }
-
     let isCodeFileOpen = false;
     if (configData.codeFileToEdit) {
       const repoDirectory = fileProvider.getRepoPath();
@@ -299,6 +270,27 @@ export function activate(context: vscode.ExtensionContext) {
               }
               terminal.show();
 
+              const codeEditor = vscode.window.visibleTextEditors.find(
+                editor => editor.viewColumn === vscode.ViewColumn.One
+              );
+
+              if (configData.persistentLenses && codeEditor) {
+                const persistentLenses: PersistentLens[] = configData.persistentLenses.map(lens => ({
+                    line: lens.line,
+                    explanation: lens.explanation
+                }));
+
+                const hintInfo = {
+                    lines: [],
+                    hintText: '',
+                    label: item.label,
+                    isTemp: false,
+                    persistent_lenses: persistentLenses
+                };
+
+                clickableHintLines.set(codeEditor.document.uri.toString(), hintInfo);
+                codeLensChangeEmitter.fire();
+              }
           } catch (error) {
               vscode.window.showErrorMessage(`Could not open file: ${fileUri}`);
           }
@@ -498,17 +490,14 @@ export function activate(context: vscode.ExtensionContext) {
 
   const showInlineHintFromLensDisposable = vscode.commands.registerCommand(
     'sprout.showInlineHintFromLens',
-    (uri: vscode.Uri, line: number) => {
+    (uri: vscode.Uri, lens: PersistentLens) => {
       const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uri.toString());
       const info = clickableHintLines.get(uri.toString());
       if (!editor || !info) return;
 
-      const persistentLens = info.persistent_lenses.find(lens => lens.line === line);
-      if (persistentLens) {
-        const line_to_show = line - 1;
-        showInlineHint(editor, line_to_show, persistentLens.explanation);
-        return;
-      }
+      const line_to_show = lens.line - 1;
+      showInlineHint(editor, line_to_show, lens.explanation);
+      return;
 
       // const rangeClicked = info.lines.find(([start, end]) => line >= start && line <= end);
       // if (rangeClicked) {
@@ -531,7 +520,7 @@ export function activate(context: vscode.ExtensionContext) {
             new vscode.CodeLens(range, {
               title: "💬 Learn more",
               command: 'sprout.showInlineHintFromLens',
-              arguments: [document.uri, lens.line]
+              arguments: [document.uri, lens]
             })
           );
         }
