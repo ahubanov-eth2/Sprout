@@ -61,7 +61,7 @@ const provider = new class implements vscode.TextDocumentContentProvider {
       return acc + word + sep;
     }, '');
 
-    return `Needed changes:\n\n${formattedText}`;
+    return `${formattedText}`;
   }
 };
 
@@ -197,7 +197,7 @@ export function activate(context: vscode.ExtensionContext) {
       const lineOffset = 1;
       const lineRanges = configData.hintLineRangesCurrent as [number, number][];
       const linesToHighlight = (lineRanges || []).map(([startLine, endLine]) => ({
-          range: new vscode.Range(startLine + lineOffset, 0, endLine + lineOffset, 1000000)
+          range: new vscode.Range(startLine + lineOffset - 1, 0, endLine + lineOffset, 1000000) // the -1 is because of the warning message that is to be added
       }));
 
       const firstHighlightedStart = (lineRanges[0][0] - 1) + lineOffset;
@@ -263,6 +263,8 @@ export function activate(context: vscode.ExtensionContext) {
           ...existing_or_default,
           persistent_lenses: persistentLensInfo
         });
+
+        codeLensChangeEmitter.fire();
       }
       
     }
@@ -435,8 +437,8 @@ export function activate(context: vscode.ExtensionContext) {
           solutionContent = solutionResult;
           const currentContent = fs.readFileSync(tempFileCopyUri.fsPath, 'utf8');
 
-          const currentLines = currentContent.split('\n').slice(startLineCurrent, endLineCurrent);
-          const solutionLines = solutionContent.split('\n').slice(startLineSolution, endLineSolution);
+          const currentLines = currentContent.split('\n').slice(startLineCurrent - 1, endLineCurrent);
+          const solutionLines = solutionContent.split('\n').slice(startLineSolution - 1, endLineSolution);
 
           const currentTempFilePath = path.join(os.tmpdir(), `current-temp-${path.basename(relativeFilePath)}`);
           const solutionTempFilePath = path.join(os.tmpdir(), `solution-temp-${path.basename(relativeFilePath)}`);
