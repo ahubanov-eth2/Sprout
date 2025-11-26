@@ -31,6 +31,7 @@ interface ConfigData {
   codeFileToEdit? : string,
   hintLineRangesCurrent? : Array<[number, number]>,
   hintLineRangesSolution? : Array<[number, number]>,
+  diffLineRangesCurrent? : Array<[number, number]>,
   hint? : string
   persistentLenses? : PersistentLens[]
 }
@@ -196,7 +197,7 @@ export function activate(context: vscode.ExtensionContext) {
       const lineOffset = 1;
       const lineRanges = configData.hintLineRangesCurrent as [number, number][];
       const linesToHighlight = (lineRanges || []).map(([startLine, endLine]) => ({
-          range: new vscode.Range((startLine - 1) + lineOffset, 0, (endLine - 2) + lineOffset, 1000000)
+          range: new vscode.Range(startLine + lineOffset, 0, endLine + lineOffset, 1000000)
       }));
 
       const firstHighlightedStart = (lineRanges[0][0] - 1) + lineOffset;
@@ -406,13 +407,13 @@ export function activate(context: vscode.ExtensionContext) {
         configData = JSON.parse(config);
       }
 
-      const lineRangesCurrent = configData.hintLineRangesCurrent as [number, number][]
+      const lineRangesCurrent = configData.diffLineRangesCurrent as [number, number][]
       const lineRangesSolution = configData.hintLineRangesSolution as [number, number][]  
 
-      const startLineCurrent = lineRangesCurrent[0][0] - 1
+      const startLineCurrent = lineRangesCurrent[0][0]
       const endLineCurrent = lineRangesCurrent[lineRangesCurrent.length - 1][1] 
 
-      const startLineSolution = lineRangesSolution[0][0] - 1
+      const startLineSolution = lineRangesSolution[0][0]
       const endLineSolution = lineRangesSolution[lineRangesSolution.length - 1][1] 
 
       const repoPath = fileProvider.getRepoPath() as string;
