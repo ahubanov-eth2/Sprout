@@ -209,14 +209,6 @@ export function activate(context: vscode.ExtensionContext) {
       codeEditor.setDecorations(warningHeaderDecorationType, [headerRange]);
       codeEditor.setDecorations(hintDecorationType, linesToHighlight);
 
-      clickableHintLines.set(codeEditor.document.uri.toString(), {
-        lines: lineRanges,
-        hintText: hintText,
-        label: label,
-        isTemp: true,
-        persistent_lenses: []  
-      });
-
       if (lineRanges && lineRanges.length > 0) {
         const [firstStart] = lineRanges[0];
         const targetPos = new vscode.Position(firstStart - 1 + lineOffset, 0);
@@ -275,9 +267,9 @@ export function activate(context: vscode.ExtensionContext) {
               );
 
               if (configData.persistentLenses && codeEditor) {
-                const persistentLenses: PersistentLens[] = configData.persistentLenses.map(lens => ({
-                    line: lens.line,
-                    explanation: lens.explanation
+                const persistentLenses = (configData.persistentLenses || []).map(l => ({
+                  line: Number(l.line),
+                  explanation: String(l.explanation)
                 }));
 
                 const hintInfo = {
@@ -514,13 +506,16 @@ export function activate(context: vscode.ExtensionContext) {
       if (!hintInfo) return lenses;
 
       if (hintInfo.persistent_lenses) {
-        for (const lens of hintInfo.persistent_lenses) {
-          const range = new vscode.Range(lens.line - 1, 0, lens.line - 1, 0);
+        for (const pl of hintInfo.persistent_lenses) {
+
+          const lensArg = { line: Number(pl.line), explanation: String(pl.explanation) };
+          const range = new vscode.Range(lensArg.line - 1, 0, lensArg.line - 1, 0);
+
           lenses.push(
             new vscode.CodeLens(range, {
               title: "💬 Learn more",
               command: 'sprout.showInlineHintFromLens',
-              arguments: [document.uri, lens]
+              arguments: [document.uri, lensArg]
             })
           );
         }
@@ -575,7 +570,9 @@ export function activate(context: vscode.ExtensionContext) {
 function showInlineHint(editor: vscode.TextEditor, line: number, hintText: string) {
   const startPos = new vscode.Position(line, 0);
 
-  const virtualDocUri = vscode.Uri.parse(`sprouthint:${editor.document.fileName}`);
+  const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const virtualDocUri = vscode.Uri.parse(`sprouthint:${uniqueId}.md`);
+
   hintTexts.set(virtualDocUri.path, hintText);
 
   vscode.commands.executeCommand(
