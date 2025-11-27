@@ -91,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
       isWholeLine: true,
       backgroundColor: new vscode.ThemeColor('editor.background'),
       before: {
-          contentText: "⚠️ This is the original code file discounting changes made by you (if any)",
+          contentText: "⚠️ This is only an example showcase file. It is the original code file discounting changes made by you (if any)",
           color: new vscode.ThemeColor('editorWarning.foreground'),
           fontWeight: 'bold',
           fontStyle: 'italic',

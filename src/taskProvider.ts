@@ -15,12 +15,19 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
 
   private async loadData() {
 
+    const courseName = process.env.SPROUT_COURSE_NAME || '';
+
     const coursePath = vscode.Uri.joinPath(
       vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
       'data',
       'structured-courses', 
-      'course1'
+      courseName
     );
+
+    if (!fs.existsSync(coursePath.fsPath)) {
+        vscode.window.showErrorMessage(`Attempted to launch a course but it was not found in extension data.`);
+        return;
+    }
     
     const rootMetaPath = path.join(coursePath.fsPath, 'course-info.yaml');
     const rootMetaContent = fs.readFileSync(rootMetaPath, 'utf8');
