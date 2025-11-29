@@ -127,7 +127,7 @@ export function activate(context: vscode.ExtensionContext) {
           'myRightPanel',
           'My Right Panel',
           { viewColumn: vscode.ViewColumn.One, preserveFocus: true },
-          { enableScripts: true }
+          { enableScripts: true, enableFindWidget: true }
         );
 
         currentPanel.webview.onDidReceiveMessage(
@@ -308,7 +308,7 @@ export function activate(context: vscode.ExtensionContext) {
             'myRightPanel',
             'My Right Panel',
             { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
-            { enableScripts: true }
+            { enableScripts: true, enableFindWidget: true }
         );
 
         currentPanel.webview.onDidReceiveMessage(
