@@ -184,7 +184,7 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       const hintUri = vscode.Uri.parse(
-          `sprout-hint:${label}.md?${encodeURIComponent(hintText)}`
+          `sprout-hint:Hint for ${label}.md?${encodeURIComponent(hintText)}`
       );
       const hintDoc = await vscode.workspace.openTextDocument(hintUri);
 
