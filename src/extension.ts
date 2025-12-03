@@ -87,6 +87,24 @@ export function activate(context: vscode.ExtensionContext) {
       fileProvider.setRepoPath(projectsDirectory);
   }
 
+  const listener = vscode.window.onDidChangeActiveTextEditor(async (editor) => {
+      if (!editor) return;
+
+      if (editor.document.fileName.endsWith('data/project-repository/dev-test/index.html')) {
+
+          await new Promise(r => setTimeout(r, 1000));
+
+          try {
+              await vscode.commands.executeCommand('extension.liveServer.goOnline');
+              vscode.window.showInformationMessage('Sprout: Decap CMS launched on Live Server 🚀');
+          } catch (err) {
+              console.error('Failed to launch Live Server:', err);
+          }
+      }
+  });
+
+  context.subscriptions.push(listener);
+
   const warningHeaderDecorationType = vscode.window.createTextEditorDecorationType({
       isWholeLine: true,
       backgroundColor: new vscode.ThemeColor('editor.background'),
