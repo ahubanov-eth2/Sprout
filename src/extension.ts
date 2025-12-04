@@ -140,11 +140,12 @@ export function activate(context: vscode.ExtensionContext) {
     if (currentPanel) {
         currentPanel.reveal(vscode.ViewColumn.One, true);
     } else {
+        const extensionMediaUri = vscode.Uri.joinPath(context.extensionUri, 'media');
         currentPanel = vscode.window.createWebviewPanel(
           'myRightPanel',
           'My Right Panel',
           { viewColumn: vscode.ViewColumn.One, preserveFocus: true },
-          { enableScripts: true, enableFindWidget: true }
+          { enableScripts: true, enableFindWidget: true, localResourceRoots: [extensionMediaUri] }
         );
 
         currentPanel.webview.onDidReceiveMessage(
@@ -619,9 +620,16 @@ function getWebviewContent(
   item: any, 
   siblings: Section[], 
   currentIndex: number,
-  parentLabel: string
+  parentLabel: string,
+  webview: vscode.Webview
 ): string 
 {
+    const mediaFolderUri = vscode.Uri.joinPath(
+      vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+      'media'
+    );
+    const mediaBaseUri = webview.asWebviewUri(mediaFolderUri);
+
     const uri = vscode.Uri.joinPath(
       vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
       'media',
@@ -629,6 +637,7 @@ function getWebviewContent(
     );
     let htmlContent = fs.readFileSync(uri.fsPath, 'utf8');
 
+    htmlContent = htmlContent.replace('{{MEDIA_BASE_URI}}', mediaBaseUri.toString());
     htmlContent = htmlContent.replace('{{PARENT_TITLE}}', parentLabel);
 
     let paginationHtml = '';
@@ -701,10 +710,10 @@ function updatePanelContent(
   item: Section, 
   siblings: Section[], 
   currentIndex: number,
-  parentLabel: string
+  parentLabel: string,
 ) {
   panel.title = `${item.label}`;
-  panel.webview.html = getWebviewContent(item, siblings, currentIndex, parentLabel); 
+  panel.webview.html = getWebviewContent(item, siblings, currentIndex, parentLabel, panel.webview); 
 }
 
 export function deactivate() {}
