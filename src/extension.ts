@@ -679,8 +679,11 @@ function getWebviewContent(
           description = marked.parse(markdownContent) as string;
 
           description = description.replace(/src="([^"]+)"/g, (match, imgName) => {
-            if (imgName === "broken.png") return `src="${image1Uri}"`;
-            if (imgName === "fixed.png") return `src="${image2Uri}"`;
+            const normalized = imgName.replace(/^\.?\//, "");
+
+            if (normalized.endsWith("broken.png")) return `src="${image1Uri}"`;
+            if (normalized.endsWith("fixed.png")) return `src="${image2Uri}"`;
+
             return match;
           });
       } catch (error) {
