@@ -628,7 +628,9 @@ function getWebviewContent(
       vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
       'media'
     );
-    const mediaBaseUri = webview.asWebviewUri(mediaFolderUri);
+
+    const image1Uri = webview.asWebviewUri(vscode.Uri.joinPath(mediaFolderUri, 'broken.png'));
+    const image2Uri = webview.asWebviewUri(vscode.Uri.joinPath(mediaFolderUri, 'fixed.png'));
 
     const uri = vscode.Uri.joinPath(
       vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
@@ -637,8 +639,11 @@ function getWebviewContent(
     );
     let htmlContent = fs.readFileSync(uri.fsPath, 'utf8');
 
-    htmlContent = htmlContent.replace('{{MEDIA_BASE_URI}}', mediaBaseUri.toString());
     htmlContent = htmlContent.replace('{{PARENT_TITLE}}', parentLabel);
+
+    htmlContent = htmlContent
+      .replace('{{IMAGE1}}', image1Uri.toString())
+      .replace('{{IMAGE2}}', image2Uri.toString());
 
     let paginationHtml = '';
     if (siblings.length > 0) {
@@ -672,6 +677,12 @@ function getWebviewContent(
           );
           const markdownContent = fs.readFileSync(fullTaskDescriptionFile.fsPath, 'utf8');
           description = marked.parse(markdownContent) as string;
+
+          description = description.replace(/src="([^"]+)"/g, (match, imgName) => {
+            if (imgName === "broken.png") return `src="${image1Uri}"`;
+            if (imgName === "fixed.png") return `src="${image2Uri}"`;
+            return match;
+          });
       } catch (error) {
           description = `Failed to load content for ${item.label}.`;
           console.error(error);
