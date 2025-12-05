@@ -453,7 +453,22 @@ export function activate(context: vscode.ExtensionContext) {
           solutionContent = solutionResult;
           const currentContent = fs.readFileSync(tempFileCopyUri.fsPath, 'utf8');
 
-          const currentLines = currentContent.split('\n').slice(startLineCurrent - 1, endLineCurrent);
+          const hasCurrentRange =
+            lineRangesCurrent &&
+            lineRangesCurrent.length > 0 &&
+            !(lineRangesCurrent.length === 1 &&
+              lineRangesCurrent[0][0] === 0 &&
+              lineRangesCurrent[0][1] === 0);
+
+          let currentLines: string[] = [];
+          if (hasCurrentRange) {
+              currentLines = currentContent
+                  .split('\n')
+                  .slice(startLineCurrent - 1, endLineCurrent);
+          } else {
+              currentLines = [];
+          }
+
           const solutionLines = solutionContent.split('\n').slice(startLineSolution - 1, endLineSolution);
 
           const currentTempFilePath = path.join(os.tmpdir(), `current-temp-${path.basename(relativeFilePath)}`);
