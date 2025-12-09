@@ -250,19 +250,16 @@ export function activate(context: vscode.ExtensionContext) {
       configData = JSON.parse(config);
     }
 
-    const isRunInstruction = typeof item.label === 'string' && item.label.startsWith("How to run");
-    if (isRunInstruction)
-    {
-      const repoDirectory = fileProvider.getRepoPath();
-      let terminal = vscode.window.terminals.find(t => t.name === 'Sprout Terminal');
-        if (!terminal) {
-            terminal = vscode.window.createTerminal({
-                name: 'Sprout Terminal',
-                cwd: repoDirectory
-            });
-        }
-        terminal.show();
+    const repoDirectory = fileProvider.getRepoPath();
+    let terminal = vscode.window.terminals.find(t => t.name === 'Sprout Terminal');
+    if (!terminal) {
+        terminal = vscode.window.createTerminal({
+            name: 'Sprout Terminal',
+            cwd: repoDirectory
+        });
     }
+    terminal.show();
+  
 
     let isCodeFileOpen = false;
     if (configData.codeFileToEdit) {
