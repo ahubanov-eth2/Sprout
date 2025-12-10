@@ -104,24 +104,24 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(listener);
 
-  const warningHeaderDecorationType = vscode.window.createTextEditorDecorationType({
-      isWholeLine: true,
-      backgroundColor: new vscode.ThemeColor('editor.background'),
-      before: {
-          contentText: "⚠️ This is only an example showcase file. It is the original code file discounting changes made by you (if any)",
-          color: new vscode.ThemeColor('editorWarning.foreground'),
-          fontWeight: 'bold',
-          fontStyle: 'italic',
-          margin: '0 0 0 20px',
-      },
-      after: {
-          contentText: " ⚠️",
-          color: new vscode.ThemeColor('editorWarning.foreground'),
-      },
-      borderWidth: '0 0 1px 0',
-      borderColor: new vscode.ThemeColor('editorWarning.foreground'),
-      borderStyle: 'solid'
-  });
+  // const warningHeaderDecorationType = vscode.window.createTextEditorDecorationType({
+  //     isWholeLine: true,
+  //     backgroundColor: new vscode.ThemeColor('editor.background'),
+  //     before: {
+  //         contentText: "⚠️ This is only an example showcase file. It is the original code file discounting changes made by you (if any)",
+  //         color: new vscode.ThemeColor('editorWarning.foreground'),
+  //         fontWeight: 'bold',
+  //         fontStyle: 'italic',
+  //         margin: '0 0 0 20px',
+  //     },
+  //     after: {
+  //         contentText: " ⚠️",
+  //         color: new vscode.ThemeColor('editorWarning.foreground'),
+  //     },
+  //     borderWidth: '0 0 1px 0',
+  //     borderColor: new vscode.ThemeColor('editorWarning.foreground'),
+  //     borderStyle: 'solid'
+  // });
 
   vscode.workspace.onDidChangeTextDocument(event => {
       if (tempFileCopyUri && event.document.uri.toString() === tempFileCopyUri.toString()) {
@@ -194,15 +194,8 @@ export function activate(context: vscode.ExtensionContext) {
       }
       const hintText = configData.hint || '';
 
-      const tempDoc = await vscode.workspace.openTextDocument(tempFileCopyUri);
-      const codeEditor = await vscode.window.showTextDocument(tempDoc, {
-        viewColumn: vscode.ViewColumn.One,
-        preserveFocus: false,  
-        preview: false          
-      });
-
       const hintUri = vscode.Uri.parse(
-          `sprout-hint:Hint for ${label}.md?${encodeURIComponent(hintText)}`
+        `sprout-hint:Hint for ${label}.md?${encodeURIComponent(hintText)}`
       );
       const hintDoc = await vscode.workspace.openTextDocument(hintUri);
 
@@ -212,29 +205,36 @@ export function activate(context: vscode.ExtensionContext) {
         preview: false
       });
 
-      const lineOffset = 1;
-      const lineRanges = configData.hintLineRangesCurrent as [number, number][];
-      const linesToHighlight = (lineRanges || []).map(([startLine, endLine]) => ({
-          range: new vscode.Range(startLine - 1, 0, endLine, 1000000) // the -1 is because of the warning message that is to be added
-      }));
+      // const tempDoc = await vscode.workspace.openTextDocument(tempFileCopyUri);
+      // const codeEditor = await vscode.window.showTextDocument(tempDoc, {
+      //   viewColumn: vscode.ViewColumn.One,
+      //   preserveFocus: false,  
+      //   preview: false          
+      // });
 
-      const firstHighlightedStart = (lineRanges[0][0] - 1);
-      const headerRange = new vscode.Range(
-          new vscode.Position(firstHighlightedStart, 0),
-          new vscode.Position(firstHighlightedStart, 0)
-      );
+      // const lineOffset = 1;
+      // const lineRanges = configData.hintLineRangesCurrent as [number, number][];
+      // const linesToHighlight = (lineRanges || []).map(([startLine, endLine]) => ({
+      //     range: new vscode.Range(startLine - 1, 0, endLine, 1000000) // the -1 is because of the warning message that is to be added
+      // }));
 
-      codeEditor.setDecorations(warningHeaderDecorationType, [headerRange]);
-      codeEditor.setDecorations(hintDecorationType, linesToHighlight);
+      // const firstHighlightedStart = (lineRanges[0][0] - 1);
+      // const headerRange = new vscode.Range(
+      //     new vscode.Position(firstHighlightedStart, 0),
+      //     new vscode.Position(firstHighlightedStart, 0)
+      // );
 
-      if (lineRanges && lineRanges.length > 0) {
-        const [firstStart] = lineRanges[0];
-        const targetPos = new vscode.Position(firstStart - 1 + lineOffset, 0);
-        const targetRange = new vscode.Range(targetPos, targetPos);
+      // codeEditor.setDecorations(warningHeaderDecorationType, [headerRange]);
+      // codeEditor.setDecorations(hintDecorationType, linesToHighlight);
 
-        codeEditor.revealRange(targetRange, vscode.TextEditorRevealType.AtTop);
-        codeEditor.selection = new vscode.Selection(targetPos, targetPos);
-      }
+      // if (lineRanges && lineRanges.length > 0) {
+      //   const [firstStart] = lineRanges[0];
+      //   const targetPos = new vscode.Position(firstStart - 1 + lineOffset, 0);
+      //   const targetRange = new vscode.Range(targetPos, targetPos);
+
+      //   codeEditor.revealRange(targetRange, vscode.TextEditorRevealType.AtTop);
+      //   codeEditor.selection = new vscode.Selection(targetPos, targetPos);
+      // }
   });
 
   const sectionSelectedDisposable = vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
@@ -422,21 +422,21 @@ export function activate(context: vscode.ExtensionContext) {
         configData = JSON.parse(config);
       }
 
-      const lineRangesCurrent = configData.diffLineRangesCurrent as [number, number][]
-      const lineRangesSolution = configData.hintLineRangesSolution as [number, number][]  
+      // const lineRangesCurrent = configData.diffLineRangesCurrent as [number, number][]
+      // const lineRangesSolution = configData.hintLineRangesSolution as [number, number][]  
 
-      const startLineCurrent = lineRangesCurrent[0][0]
-      const endLineCurrent = lineRangesCurrent[lineRangesCurrent.length - 1][1] 
+      // const startLineCurrent = lineRangesCurrent[0][0]
+      // const endLineCurrent = lineRangesCurrent[lineRangesCurrent.length - 1][1] 
 
-      const startLineSolution = lineRangesSolution[0][0]
-      const endLineSolution = lineRangesSolution[lineRangesSolution.length - 1][1] 
+      // const startLineSolution = lineRangesSolution[0][0]
+      // const endLineSolution = lineRangesSolution[lineRangesSolution.length - 1][1] 
 
       const repoPath = fileProvider.getRepoPath() as string;
       const relativeFilePath = path.relative(repoPath, activeFileUri.fsPath);
 
       const solutionCommand = `git --git-dir=${path.join(repoPath, '.git')} show ${process.env.COMMIT}:${relativeFilePath}`;
 
-      let solutionContent: string;
+      // let solutionContent: string;
       try {
           const solutionResult = await new Promise<string>((resolve, reject) => {
               exec(solutionCommand, { cwd: repoPath }, (err, stdout, stderr) => {
@@ -447,26 +447,19 @@ export function activate(context: vscode.ExtensionContext) {
               });
           });
 
-          solutionContent = solutionResult;
+          // solutionContent = solutionResult;
           const currentContent = fs.readFileSync(tempFileCopyUri.fsPath, 'utf8');
 
-          const hasCurrentRange =
-            lineRangesCurrent &&
-            lineRangesCurrent.length > 0 &&
-            !(lineRangesCurrent.length === 1 &&
-              lineRangesCurrent[0][0] === 0 &&
-              lineRangesCurrent[0][1] === 0);
+          // let currentLines: string[] = [];
+          // if (hasCurrentRange) {
+          //     currentLines = currentContent
+          //         .split('\n')
+          //         .slice(startLineCurrent - 1, endLineCurrent);
+          // } else {
+          //     currentLines = [];
+          // }
 
-          let currentLines: string[] = [];
-          if (hasCurrentRange) {
-              currentLines = currentContent
-                  .split('\n')
-                  .slice(startLineCurrent - 1, endLineCurrent);
-          } else {
-              currentLines = [];
-          }
-
-          const solutionLines = solutionContent.split('\n').slice(startLineSolution - 1, endLineSolution);
+          // const solutionLines = solutionContent.split('\n').slice(startLineSolution - 1, endLineSolution);
 
           const currentTempFilePath = path.join(os.tmpdir(), `current-temp-${path.basename(relativeFilePath)}`);
           const solutionTempFilePath = path.join(os.tmpdir(), `solution-temp-${path.basename(relativeFilePath)}`);
@@ -474,8 +467,11 @@ export function activate(context: vscode.ExtensionContext) {
           const currentTempFileUri = vscode.Uri.file(currentTempFilePath);
           const solutionTempFileUri = vscode.Uri.file(solutionTempFilePath);
           
-          fs.writeFileSync(currentTempFilePath, currentLines.join('\n'));
-          fs.writeFileSync(solutionTempFilePath, solutionLines.join('\n'));
+          // fs.writeFileSync(currentTempFilePath, currentLines.join('\n'));
+          // fs.writeFileSync(solutionTempFilePath, solutionLines.join('\n'));
+
+          fs.writeFileSync(currentTempFilePath, currentTempFilePath);
+          fs.writeFileSync(solutionTempFilePath, solutionTempFilePath);
 
           const title = `Original vs Solution (${path.basename(relativeFilePath)})`;
           await vscode.commands.executeCommand(

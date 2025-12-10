@@ -258,7 +258,7 @@
         <h2>{{TITLE}}</h2>
         <div>{{DESCRIPTION}}</div>
 
-        <div class="drawer-handle" id="drawerHandle">▲ Discover Help</div>
+        <div class="drawer-handle" id="drawerHandle">▲ Discover Hints and Solution</div>
 
         <div class="bottom-drawer" id="bottomDrawer">
             <div class="drawer-buttons">
@@ -358,7 +358,7 @@
 
                 if (solutionButton) {
                     solutionButton.addEventListener('click', () => {
-                        solutionButton.textContent = 'Show solution as a git diff';
+                        solutionButton.textContent = 'Show solution as a git diff between original file and published solution';
                         solutionButton.style.backgroundColor = '#0078d4';
 
                         vscode.postMessage({
