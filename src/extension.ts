@@ -251,15 +251,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const repoDirectory = fileProvider.getRepoPath();
-    let terminal = vscode.window.terminals.find(t => t.name === 'Sprout Terminal');
-    if (!terminal) {
-        terminal = vscode.window.createTerminal({
-            name: 'Sprout Terminal',
-            cwd: repoDirectory
-        });
-    }
-    terminal.show();
-  
 
     let isCodeFileOpen = false;
     if (configData.codeFileToEdit) {
@@ -381,6 +372,15 @@ export function activate(context: vscode.ExtensionContext) {
     if (treeView) {
       await treeView.reveal(item, { expand: true, focus: true, select: true });
     }
+
+    let terminal = vscode.window.terminals.find(t => t.name === 'Sprout Terminal');
+    if (!terminal) {
+        terminal = vscode.window.createTerminal({
+            name: 'Sprout Terminal',
+            cwd: repoDirectory
+        });
+    }
+    terminal.show();
   });
 
   const nextItemDisposable = vscode.commands.registerCommand('sprout.goToNextItem', (label: string) => {
@@ -470,8 +470,8 @@ export function activate(context: vscode.ExtensionContext) {
           // fs.writeFileSync(currentTempFilePath, currentLines.join('\n'));
           // fs.writeFileSync(solutionTempFilePath, solutionLines.join('\n'));
 
-          fs.writeFileSync(currentTempFilePath, currentTempFilePath);
-          fs.writeFileSync(solutionTempFilePath, solutionTempFilePath);
+          fs.writeFileSync(currentTempFilePath, currentContent);
+          fs.writeFileSync(solutionTempFilePath, solutionResult);
 
           const title = `Original vs Solution (${path.basename(relativeFilePath)})`;
           await vscode.commands.executeCommand(
