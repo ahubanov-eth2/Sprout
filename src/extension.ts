@@ -68,6 +68,8 @@ const provider = new class implements vscode.TextDocumentContentProvider {
 
 export function activate(context: vscode.ExtensionContext) {
 
+  vscode.commands.executeCommand("workbench.action.closeSecondarySideBar");
+
   const projectsDirectory = path.join(
     getWorkspaceRoot(),
     'data',
