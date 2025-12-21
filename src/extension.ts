@@ -258,15 +258,19 @@ export function activate(context: vscode.ExtensionContext) {
       if (repoDirectory) {
           const fileUri = vscode.Uri.file(path.join(repoDirectory, configData.codeFileToEdit));
           try {
-              const tempFileName = `temp_${Date.now()}_${path.basename(fileUri.fsPath)}`;
-              const tempFilePath = path.join(os.tmpdir(), tempFileName);
 
-              const tsIgnoreHeader = "// @ts-nocheck\n"; 
-              const originalContent = fs.readFileSync(fileUri.fsPath, 'utf-8');
-              const tempFileContent = tsIgnoreHeader + originalContent;
+              if (!tempFileCopyUri)
+              {              
+                  const tempFileName = `temp_${Date.now()}_${path.basename(fileUri.fsPath)}`;
+                  const tempFilePath = path.join(os.tmpdir(), tempFileName);
 
-              tempFileCopyUri = vscode.Uri.file(tempFilePath);
-              fs.writeFileSync(tempFileCopyUri.fsPath, tempFileContent);
+                  const tsIgnoreHeader = "// @ts-nocheck\n"; 
+                  const originalContent = fs.readFileSync(fileUri.fsPath, 'utf-8');
+                  const tempFileContent = tsIgnoreHeader + originalContent;
+
+                  tempFileCopyUri = vscode.Uri.file(tempFilePath);
+                  fs.writeFileSync(tempFileCopyUri.fsPath, tempFileContent);
+              }
 
               const doc = await vscode.workspace.openTextDocument(fileUri);
               await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
@@ -709,7 +713,7 @@ function getWebviewContent(
 
     let highlightLinesHtml = `
       <button id="highlightLinesButton">
-          Show hint and highlight lines where changes are needed
+          Show hint
       </button>
     `;
 

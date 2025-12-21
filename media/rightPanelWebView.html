@@ -346,7 +346,7 @@
 
                 if (highlightButton) {
                     highlightButton.addEventListener('click', () => {
-                        highlightButton.textContent = 'Show hint and highlight lines where changes are needed';
+                        highlightButton.textContent = 'Show hint';
                         highlightButton.style.backgroundColor = '#0078d4';
 
                         vscode.postMessage({
@@ -358,7 +358,7 @@
 
                 if (solutionButton) {
                     solutionButton.addEventListener('click', () => {
-                        solutionButton.textContent = 'Show solution as a git diff between original file and published solution';
+                        solutionButton.textContent = 'Show solution as a git diff';
                         solutionButton.style.backgroundColor = '#0078d4';
 
                         vscode.postMessage({
@@ -386,7 +386,7 @@
                     
                     if (highlightButton && highlightButton.classList.contains('active')) {
                         highlightButton.classList.remove('active');
-                        highlightButton.textContent = 'Show Hint: Highlight lines where changes are needed';
+                        highlightButton.textContent = 'Show Hint';
                         highlightButton.style.backgroundColor = '#0078d4';
 
                         vscode.postMessage({
@@ -409,7 +409,7 @@
                     
                     if (highlightButton && highlightButton.classList.contains('active')) {
                         highlightButton.classList.remove('active');
-                        highlightButton.textContent = 'Show Hint: Highlight lines where changes are needed';
+                        highlightButton.textContent = 'Show Hint';
                         highlightButton.style.backgroundColor = '#0078d4';
 
                         vscode.postMessage({
