@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { marked } from 'marked';
 import * as os from 'os';
 import { exec } from 'child_process';
+import * as ts from 'typescript';
 
 const codeLensChangeEmitter = new vscode.EventEmitter<void>();
 
@@ -18,12 +19,20 @@ const hintDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: "#0078d4a0"
 });
 
-const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
+const clickableHintLines = new Map<string, { hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
 
 type PersistentLens = {
-    line: number;
-    explanation: string; 
+  selector: SyntaxSelector;
+  explanation: string;
 };
+
+type SyntaxSelector =
+  | { type: 'function'; name: string }
+  | { type: 'class'; name: string }
+  | { type: 'method'; className: string; name: string }
+  | { type: 'call'; callee: string }
+  | { type: 'variable'; name: string }
+  | { type: 'jsxElement'; name: string };
 
 interface ConfigData {
   setupData? : any,
@@ -103,25 +112,6 @@ export function activate(context: vscode.ExtensionContext) {
       }
   });
   context.subscriptions.push(listener);
-
-  // const warningHeaderDecorationType = vscode.window.createTextEditorDecorationType({
-  //     isWholeLine: true,
-  //     backgroundColor: new vscode.ThemeColor('editor.background'),
-  //     before: {
-  //         contentText: "⚠️ This is only an example showcase file. It is the original code file discounting changes made by you (if any)",
-  //         color: new vscode.ThemeColor('editorWarning.foreground'),
-  //         fontWeight: 'bold',
-  //         fontStyle: 'italic',
-  //         margin: '0 0 0 20px',
-  //     },
-  //     after: {
-  //         contentText: " ⚠️",
-  //         color: new vscode.ThemeColor('editorWarning.foreground'),
-  //     },
-  //     borderWidth: '0 0 1px 0',
-  //     borderColor: new vscode.ThemeColor('editorWarning.foreground'),
-  //     borderStyle: 'solid'
-  // });
 
   vscode.workspace.onDidChangeTextDocument(event => {
       if (tempFileCopyUri && event.document.uri.toString() === tempFileCopyUri.toString()) {
@@ -292,12 +282,11 @@ export function activate(context: vscode.ExtensionContext) {
 
               if (configData.persistentLenses && codeEditor) {
                 const persistentLenses = (configData.persistentLenses || []).map(l => ({
-                  line: Number(l.line),
+                  selector: l.selector,
                   explanation: String(l.explanation)
                 }));
 
                 const hintInfo = {
-                    lines: [],
                     hintText: '',
                     label: item.label,
                     isTemp: false,
@@ -527,66 +516,71 @@ export function activate(context: vscode.ExtensionContext) {
   const showInlineHintFromLensDisposable = vscode.commands.registerCommand(
     'sprout.showInlineHintFromLens',
     (uri: vscode.Uri, lens: PersistentLens) => {
-      const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uri.toString());
-      const info = clickableHintLines.get(uri.toString());
-      if (!editor || !info) return;
 
-      const line_to_show = lens.line - 1;
-      showInlineHint(editor, line_to_show, lens.explanation);
-      return;
+      const editor = vscode.window.visibleTextEditors.find(
+        e => e.document.uri.toString() === uri.toString()
+      );
+      if (!editor) return;
 
-      // const rangeClicked = info.lines.find(([start, end]) => line >= start && line <= end);
-      // if (rangeClicked) {
-      //   showInlineHint(editor, rangeClicked, info.hintText);
-      // }
+      const sourceFile = parseDocument(editor.document);
+
+      const node = findNode(sourceFile, lens.selector);
+      if (!node) {
+        return;
+      }
+
+      const position = editor.document.positionAt(node.getStart());
+
+      showInlineHint(
+        editor,
+        position,
+        lens.explanation
+      );
     }
   );
 
-  const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, {
-    provideCodeLenses(document) {
-      const hintInfo = clickableHintLines.get(document.uri.toString());
-      const lenses: vscode.CodeLens[] = [];
+  const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider(
+    [
+      { language: 'javascript', scheme: 'file' },
+      { language: 'typescript', scheme: 'file' },
+      { language: 'javascriptreact', scheme: 'file' },
+      { language: 'typescriptreact', scheme: 'file' }
+    ],
+    {
+      onDidChangeCodeLenses: codeLensChangeEmitter.event,
 
-      if (!hintInfo) return lenses;
+      provideCodeLenses(document) {
+        const info = clickableHintLines.get(document.uri.toString());
+        if (!info) return [];
 
-      if (hintInfo.persistent_lenses) {
-        for (const pl of hintInfo.persistent_lenses) {
+        const sourceFile = parseDocument(document);
+        const lenses: vscode.CodeLens[] = [];
 
-          const lensArg = { line: Number(pl.line), explanation: String(pl.explanation) };
-          const range = new vscode.Range(lensArg.line - 1, 0, lensArg.line - 1, 0);
+        for (const lens of info.persistent_lenses) {
+          const node = findNode(sourceFile, lens.selector);
+          if (!node) continue;
 
           lenses.push(
-            new vscode.CodeLens(range, {
-              title: "💬 Learn more",
-              command: 'sprout.showInlineHintFromLens',
-              arguments: [document.uri, lensArg]
-            })
+            new vscode.CodeLens(
+              nodeToRange(document, node),
+              {
+                title: '💬 Learn more',
+                command: 'sprout.showInlineHintFromLens',
+                arguments: [document.uri, lens]
+              }
+            )
           );
         }
+
+        return lenses;
       }
+    }
+  );
 
-      // if (!hintInfo.isTemp)
-      // {
-      //   const [firstStart] = hintInfo.lines[0];
-      //   const range = new vscode.Range(firstStart - 1, 0, firstStart - 1, 0);
-
-      //   lenses.push(
-      //     new vscode.CodeLens(range, {
-      //       title: '💬 Hint',
-      //       command: 'sprout.showInlineHintFromLens',
-      //       arguments: [document.uri, firstStart]
-      //     }),
-      //     new vscode.CodeLens(range, {
-      //       title: '🧩 Show Solution',
-      //       command: 'sprout.showSolution',
-      //       arguments: [hintInfo.label]
-      //     })
-      //   );
-      // }
-
-      return lenses;
-    },
-    onDidChangeCodeLenses: codeLensChangeEmitter.event
+  vscode.workspace.onDidChangeTextDocument(e => {
+    if (clickableHintLines.has(e.document.uri.toString())) {
+      codeLensChangeEmitter.fire();
+    }
   });
 
   const hintSchema = vscode.workspace.registerTextDocumentContentProvider('sprout-hint', {
@@ -611,9 +605,86 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-function showInlineHint(editor: vscode.TextEditor, line: number, hintText: string) {
-  const startPos = new vscode.Position(line, 0);
+function parseDocument(document: vscode.TextDocument): ts.SourceFile {
+  return ts.createSourceFile(
+    document.fileName,
+    document.getText(),
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS
+  );
+}
 
+function findNode(
+  sourceFile: ts.SourceFile,
+  selector: SyntaxSelector
+): ts.Node | undefined {
+  let found: ts.Node | undefined;
+
+  function visit(node: ts.Node) {
+    if (matchesSelector(node, selector)) {
+      found = node;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return found;
+}
+
+function matchesSelector(node: ts.Node, sel: SyntaxSelector): boolean {
+  if (sel.type === 'function') {
+    return (
+      ts.isFunctionDeclaration(node) &&
+      node.name?.text === sel.name
+    );
+  }
+  if (sel.type === 'variable') {
+    return (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === sel.name
+    );
+  }
+  if (sel.type === 'call') {
+    return (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === sel.callee
+    );
+  }
+  if (sel.type === 'class') {
+    return (
+      ts.isClassDeclaration(node) &&
+      node.name?.text === sel.name
+    );
+  }
+  if (sel.type === 'jsxElement') {
+    return (
+      ts.isJsxElement(node) &&
+      ts.isIdentifier(node.openingElement.tagName) &&
+      node.openingElement.tagName.text === sel.name
+    );
+  }
+
+  return false;
+}
+
+function nodeToRange(
+  document: vscode.TextDocument,
+  node: ts.Node
+): vscode.Range {
+  const start = document.positionAt(node.getStart());
+  const end = document.positionAt(node.getEnd());
+  return new vscode.Range(start, end);
+}
+
+function showInlineHint(
+  editor: vscode.TextEditor,
+  position: vscode.Position,
+  hintText: string
+) {
   const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const virtualDocUri = vscode.Uri.parse(`sprouthint:${uniqueId}.md`);
 
@@ -622,7 +693,7 @@ function showInlineHint(editor: vscode.TextEditor, line: number, hintText: strin
   vscode.commands.executeCommand(
     'editor.action.peekLocations',
     editor.document.uri,
-    startPos,
+    position,
     [new vscode.Location(virtualDocUri, new vscode.Position(0, 0))],
     'peek'
   );
