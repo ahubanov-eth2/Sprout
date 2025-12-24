@@ -43,6 +43,8 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
       vscode.TreeItemCollapsibleState.Collapsed,
       "repo"
     );
+
+    this._onDidChangeTreeData.fire();
   }
 
   private async loadSection(sectionPath: string): Promise<Section> {

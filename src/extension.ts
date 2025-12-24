@@ -87,7 +87,6 @@ export function activate(context: vscode.ExtensionContext) {
   const treeView = vscode.window.createTreeView('leftView', {
     treeDataProvider: leftProvider
   });
-  // vscode.window.registerTreeDataProvider('leftView', leftProvider);
 
   const fileProvider = new FileTreeDataProvider();
   vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
