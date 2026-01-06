@@ -125,21 +125,28 @@ export function activate(context: vscode.ExtensionContext) {
       event.contentChanges.forEach(change => {
           const startLine = change.range.start.line + 1;
           const endLine = change.range.end.line + 1;
+
+          hintInfo.persistent_lenses = hintInfo.persistent_lenses.filter(lens => {
+              const line = Number(lens.line);
+              const isWithinDeletedRange = line >= startLine && line <= endLine;
+              
+              return !isWithinDeletedRange;
+          });
           
           const linesAdded = change.text.split('\n').length - 1;
           const linesRemoved = endLine - startLine;
           const lineDelta = linesAdded - linesRemoved;
 
-          if (lineDelta === 0) return;
+          if (lineDelta !== 0) {
+            hintInfo.persistent_lenses = hintInfo.persistent_lenses.map(lens => {
+                const currentLine = Number(lens.line);
+                if (currentLine > startLine) {
+                    return { ...lens, line: currentLine + lineDelta };
+                }
 
-          hintInfo.persistent_lenses = hintInfo.persistent_lenses.map(lens => {
-              const currentLine = Number(lens.line);
-              
-              if (currentLine > startLine) {
-                  return { ...lens, line: currentLine + lineDelta };
-              }
-              return lens;
-          });
+                return lens;
+            });
+          }
       });
 
       codeLensChangeEmitter.fire();
