@@ -103,25 +103,6 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(listener);
 
-  // const warningHeaderDecorationType = vscode.window.createTextEditorDecorationType({
-  //     isWholeLine: true,
-  //     backgroundColor: new vscode.ThemeColor('editor.background'),
-  //     before: {
-  //         contentText: "⚠️ This is only an example showcase file. It is the original code file discounting changes made by you (if any)",
-  //         color: new vscode.ThemeColor('editorWarning.foreground'),
-  //         fontWeight: 'bold',
-  //         fontStyle: 'italic',
-  //         margin: '0 0 0 20px',
-  //     },
-  //     after: {
-  //         contentText: " ⚠️",
-  //         color: new vscode.ThemeColor('editorWarning.foreground'),
-  //     },
-  //     borderWidth: '0 0 1px 0',
-  //     borderColor: new vscode.ThemeColor('editorWarning.foreground'),
-  //     borderStyle: 'solid'
-  // });
-
   vscode.workspace.onDidChangeTextDocument(event => {
       if (tempFileCopyUri && event.document.uri.toString() === tempFileCopyUri.toString()) {
           const edit = new vscode.WorkspaceEdit();
@@ -133,6 +114,35 @@ export function activate(context: vscode.ExtensionContext) {
           );
           vscode.workspace.applyEdit(edit);
       }
+  });
+
+  vscode.workspace.onDidChangeTextDocument(event => {
+      const uri = event.document.uri.toString();
+      const hintInfo = clickableHintLines.get(uri);
+
+      if (!hintInfo || !hintInfo.persistent_lenses) return;
+
+      event.contentChanges.forEach(change => {
+          const startLine = change.range.start.line + 1;
+          const endLine = change.range.end.line + 1;
+          
+          const linesAdded = change.text.split('\n').length - 1;
+          const linesRemoved = endLine - startLine;
+          const lineDelta = linesAdded - linesRemoved;
+
+          if (lineDelta === 0) return;
+
+          hintInfo.persistent_lenses = hintInfo.persistent_lenses.map(lens => {
+              const currentLine = Number(lens.line);
+              
+              if (currentLine > startLine) {
+                  return { ...lens, line: currentLine + lineDelta };
+              }
+              return lens;
+          });
+      });
+
+      codeLensChangeEmitter.fire();
   });
 
   function revealPanel(){
@@ -533,11 +543,6 @@ export function activate(context: vscode.ExtensionContext) {
       const line_to_show = lens.line - 1;
       showInlineHint(editor, line_to_show, lens.explanation);
       return;
-
-      // const rangeClicked = info.lines.find(([start, end]) => line >= start && line <= end);
-      // if (rangeClicked) {
-      //   showInlineHint(editor, rangeClicked, info.hintText);
-      // }
     }
   );
 
@@ -563,25 +568,6 @@ export function activate(context: vscode.ExtensionContext) {
           );
         }
       }
-
-      // if (!hintInfo.isTemp)
-      // {
-      //   const [firstStart] = hintInfo.lines[0];
-      //   const range = new vscode.Range(firstStart - 1, 0, firstStart - 1, 0);
-
-      //   lenses.push(
-      //     new vscode.CodeLens(range, {
-      //       title: '💬 Hint',
-      //       command: 'sprout.showInlineHintFromLens',
-      //       arguments: [document.uri, firstStart]
-      //     }),
-      //     new vscode.CodeLens(range, {
-      //       title: '🧩 Show Solution',
-      //       command: 'sprout.showSolution',
-      //       arguments: [hintInfo.label]
-      //     })
-      //   );
-      // }
 
       return lenses;
     },
