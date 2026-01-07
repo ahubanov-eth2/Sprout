@@ -128,7 +128,7 @@ export function activate(context: vscode.ExtensionContext) {
 
           hintInfo.persistent_lenses = hintInfo.persistent_lenses.filter(lens => {
               const line = Number(lens.line);
-              const isWithinDeletedRange = line >= startLine && line <= endLine;
+              const isWithinDeletedRange = linesRemoved > 0 && line >= startLine && line <= endLine;
               
               return !isWithinDeletedRange;
           });
@@ -140,7 +140,7 @@ export function activate(context: vscode.ExtensionContext) {
           if (lineDelta !== 0) {
             hintInfo.persistent_lenses = hintInfo.persistent_lenses.map(lens => {
                 const currentLine = Number(lens.line);
-                if (currentLine > startLine) {
+                if (currentLine > startLine || (currentLine === startLine && linesAdded > 0) ) {
                     return { ...lens, line: currentLine + lineDelta };
                 }
 
