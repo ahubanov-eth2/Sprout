@@ -7,10 +7,6 @@ import { marked } from 'marked';
 import * as os from 'os';
 import { exec } from 'child_process';
 
-import { registerGoToNextItemCommand } from './commands/goToNextItem';
-import { registerGoToPrevItemCommand } from './commands/goToPreviousItem';
-import { registerOpenFileCommand } from './commands/openFile';
-
 const codeLensChangeEmitter = new vscode.EventEmitter<void>();
 
 let currentPanel: vscode.WebviewPanel | undefined;
@@ -18,7 +14,10 @@ let onDidEndTaskDisposable: vscode.Disposable | undefined;
 let activeFileUri: vscode.Uri | undefined;
 let tempFileCopyUri: vscode.Uri | undefined;
 
-const hintDecorationType = vscode.window.createTextEditorDecorationType({ backgroundColor: "#0078d4a0" });
+const hintDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: "#0078d4a0"
+});
+
 const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
 
 type PersistentLens = {
@@ -404,9 +403,29 @@ export function activate(context: vscode.ExtensionContext) {
     terminal.show();
   });
 
-  const nextItemDisposable = registerGoToNextItemCommand(leftProvider);
-  const prevItemDisposable = registerGoToPrevItemCommand(leftProvider);
-  const openFileDisposable = registerOpenFileCommand();
+  const nextItemDisposable = vscode.commands.registerCommand('sprout.goToNextItem', (label: string) => {
+    const currentItem = leftProvider.findLeafByLabel(label);
+    if (currentItem) {
+      const nextItem = leftProvider.findNextLeaf(currentItem);
+      if (nextItem) {
+        vscode.commands.executeCommand('sprout.lineClicked', nextItem);
+      } else {
+        vscode.window.showInformationMessage('You are at the end of the list.');
+      }
+    }
+  });
+
+  const prevItemDisposable = vscode.commands.registerCommand('sprout.goToPrevItem', (label: string) => {
+    const currentItem = leftProvider.findLeafByLabel(label);
+    if (currentItem) {
+      const prevItem = leftProvider.findPrevLeaf(currentItem);
+      if (prevItem) {
+        vscode.commands.executeCommand('sprout.lineClicked', prevItem);
+      } else {
+        vscode.window.showInformationMessage('You are at the start of the list.');
+      }
+    }
+  });
 
   const showSolutionDisposable = vscode.commands.registerCommand('sprout.showSolution', async (label: string) => {
       if (!tempFileCopyUri || !activeFileUri) {
@@ -487,6 +506,10 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.window.showErrorMessage(e.message);
           return;
       }
+  })
+
+  const openFileDisposable = vscode.commands.registerCommand('sprout.openFile', (uri: vscode.Uri) => {
+      vscode.window.showTextDocument(uri);
   })
 
   const showHintPopupDisposable = vscode.commands.registerCommand('sprout.showHintPopup', async (label: string) => {
