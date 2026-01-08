@@ -5,17 +5,17 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { marked } from 'marked';
 
-import { registerGoToNextItemCommand } from './commands/goToNextItem';
-import { registerGoToPrevItemCommand } from './commands/goToPreviousItem';
-import { registerOpenFileCommand } from './commands/openFile';
-import { registerShowHintPopupCommand } from './commands/showHintPopup';
-import { registerShowInlineHintFromLensCommand } from './commands/showInlineHintFromLens';
-import { registerToggleHighlightCommand } from './commands/toggleHighlight';
-import { registerShowSolutionCommand } from './commands/showSolution';
-import { registerLineClickedCommand } from './commands/lineClicked';
-import { inlineHintContentProvider } from './hints/inlineHintUtils';
-import { PersistentLens } from './types/lens';
-import { ConfigData } from './types/config';
+import { registerGoToNextItemCommand } from './commands/goToNextItem.js';
+import { registerGoToPrevItemCommand } from './commands/goToPreviousItem.js';
+import { registerOpenFileCommand } from './commands/openFile.js';
+import { registerShowHintPopupCommand } from './commands/showHintPopup.js';
+import { registerShowInlineHintFromLensCommand } from './commands/showInlineHintFromLens.js';
+import { registerToggleHighlightCommand } from './commands/toggleHighlight.js';
+import { registerShowSolutionCommand } from './commands/showSolution.js';
+import { registerLineClickedCommand } from './commands/lineClicked.js';
+import { inlineHintContentProvider } from './hints/inlineHintUtils.js';
+import { PersistentLens } from './types/lens.js';
+import { ConfigData } from './types/config.js';
 
 const codeLensChangeEmitter = new vscode.EventEmitter<void>();
 

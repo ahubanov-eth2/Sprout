@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TaskProvider } from '../taskProvider';
+import { TaskProvider } from '../taskProvider.js';
 
 export function registerGoToPrevItemCommand(
   leftProvider: TaskProvider

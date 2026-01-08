@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { PersistentLens } from '../types/lens';
-import { showInlineHint } from '../hints/inlineHintUtils';
+import { PersistentLens } from '../types/lens.js';
+import { showInlineHint } from '../hints/inlineHintUtils.js';
 
 export function registerShowInlineHintFromLensCommand(
   clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>

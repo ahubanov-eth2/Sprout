@@ -3,11 +3,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-import { Section } from '../taskProvider';
-import { ConfigData } from '../types/config';
-import { TaskProvider } from '../taskProvider';
-import { FileTreeDataProvider } from '../fileTreeDataProvider';
-import { PersistentLens } from '../types/lens';
+import { Section } from '../taskProvider.js';
+import { ConfigData } from '../types/config.js';
+import { TaskProvider } from '../taskProvider.js';
+import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
+import { PersistentLens } from '../types/lens.js';
 
 export function registerLineClickedCommand(
   context: vscode.ExtensionContext,

@@ -4,9 +4,9 @@ import * as path from 'path';
 import * as os from 'os';
 import { exec } from 'child_process';
 
-import { TaskProvider } from '../taskProvider';
-import { FileTreeDataProvider } from '../fileTreeDataProvider';
-import { ConfigData } from '../types/config';
+import { TaskProvider } from '../taskProvider.js';
+import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
+import { ConfigData } from '../types/config.js';
 
 export function registerShowSolutionCommand(
   leftProvider: TaskProvider,
