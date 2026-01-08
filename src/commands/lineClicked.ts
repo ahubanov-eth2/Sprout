@@ -46,10 +46,7 @@ export function registerLineClickedCommand(
 
       let configData: ConfigData = {};
       if (item.configFilePath) {
-        const config = fs.readFileSync(
-          item.configFilePath,
-          'utf8'
-        );
+        const config = fs.readFileSync(item.configFilePath, 'utf8');
         configData = JSON.parse(config);
       }
 
@@ -58,73 +55,37 @@ export function registerLineClickedCommand(
 
       if (configData.codeFileToEdit) {
         if (repoDirectory) {
-          const fileUri = vscode.Uri.file(
-            path.join(
-              repoDirectory,
-              configData.codeFileToEdit
-            )
-          );
+          const fileUri = vscode.Uri.file(path.join(repoDirectory, configData.codeFileToEdit));
 
           try {
 
             if (!getTempFileCopyUri()) {
 
-              const tempFileName =
-                `temp_${Date.now()}_${path.basename(
-                  fileUri.fsPath
-                )}`;
+              const tempFileName = `temp_${Date.now()}_${path.basename(fileUri.fsPath)}`;
+              const tempFilePath = path.join(os.tmpdir(),tempFileName);
+              const tsIgnoreHeader = '// @ts-nocheck\n';
 
-              const tempFilePath = path.join(
-                os.tmpdir(),
-                tempFileName
-              );
+              const originalContent = fs.readFileSync(fileUri.fsPath,'utf-8');
 
-              const tsIgnoreHeader =
-                '// @ts-nocheck\n';
+              const tempFileContent = tsIgnoreHeader + originalContent;
 
-              const originalContent =
-                fs.readFileSync(
-                  fileUri.fsPath,
-                  'utf-8'
-                );
+              const tempUri = vscode.Uri.file(tempFilePath);
 
-              const tempFileContent =
-                tsIgnoreHeader + originalContent;
-
-              const tempUri =
-                vscode.Uri.file(tempFilePath);
-
-              fs.writeFileSync(
-                tempUri.fsPath,
-                tempFileContent
-              );
-
+              fs.writeFileSync(tempUri.fsPath,tempFileContent);
               setTempFileCopyUri(tempUri);
             }
 
-            const doc =
-              await vscode.workspace.openTextDocument(
-                fileUri
-              );
+            const doc = await vscode.workspace.openTextDocument(fileUri);
 
-            await vscode.window.showTextDocument(
-              doc,
-              vscode.ViewColumn.One
-            );
+            await vscode.window.showTextDocument(doc,vscode.ViewColumn.One);
 
             setActiveFileUri(fileUri);
             isCodeFileOpen = true;
 
-            let terminal =
-              vscode.window.terminals.find(
-                t => t.name === 'Sprout Terminal'
-              );
+            let terminal = vscode.window.terminals.find(t => t.name === 'Sprout Terminal');
 
             if (!terminal) {
-              terminal = vscode.window.createTerminal({
-                name: 'Sprout Terminal',
-                cwd: repoDirectory
-              });
+              terminal = vscode.window.createTerminal({name: 'Sprout Terminal',cwd: repoDirectory});
             }
             terminal.show();
 
@@ -135,10 +96,7 @@ export function registerLineClickedCommand(
                   vscode.ViewColumn.One
               );
 
-            if (
-              configData.persistentLenses &&
-              codeEditor
-            ) {
+            if (configData.persistentLenses && codeEditor) {
 
               const persistentLenses =
                 (configData.persistentLenses || [])

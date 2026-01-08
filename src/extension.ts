@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { TaskProvider } from './taskProvider.js'
-import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 import * as path from 'path';
 import * as fs from 'fs';
+
+import { TaskProvider } from './taskProvider.js'
+import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 
 import { registerGoToNextItemCommand } from './commands/goToNextItem.js';
 import { registerGoToPrevItemCommand } from './commands/goToPreviousItem.js';
@@ -17,23 +18,26 @@ import { PersistentLens } from './types/lens.js';
 import { getWorkspaceRoot } from './utils/workspace_utils.js';
 import { updatePanelContent } from './content_utils/panel_utils.js';
 
+import { registerTempFileMirrorListener } from './listeners/tempFileMirrorListener.js';
+import { registerPersistentLensListener } from './listeners/persistentLensListener.js';
+
 const codeLensChangeEmitter = new vscode.EventEmitter<void>();
-
-let currentPanel: vscode.WebviewPanel | undefined;
-let onDidEndTaskDisposable: vscode.Disposable | undefined;
-let activeFileUri: vscode.Uri | undefined;
-let tempFileCopyUri: vscode.Uri | undefined;
-
 const hintDecorationType = vscode.window.createTextEditorDecorationType({backgroundColor: "#0078d4a0"});
 const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
 const scheme = 'sprouthint';
 
+type ExtensionState = {
+  currentPanel?: vscode.WebviewPanel;
+  activeFileUri?: vscode.Uri;
+  tempFileCopyUri?: vscode.Uri;
+  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>;
+};
+
+const state: ExtensionState = {
+  clickableHintLines: new Map()
+};
+
 export function activate(context: vscode.ExtensionContext) {
-  const projectsDirectory = path.join(
-    getWorkspaceRoot(),
-    'data',
-    'project-repository'
-  );
 
   const leftProvider = new TaskProvider(context);
   const treeView = vscode.window.createTreeView('leftView', {
@@ -43,89 +47,29 @@ export function activate(context: vscode.ExtensionContext) {
   const fileProvider = new FileTreeDataProvider();
   vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
 
+  const projectsDirectory = path.join(
+    getWorkspaceRoot(),
+    'data',
+    'project-repository'
+  );
+
   if (fs.existsSync(projectsDirectory)) {
       fileProvider.setRepoPath(projectsDirectory);
   }
 
-  const listener = vscode.window.onDidChangeActiveTextEditor(async (editor) => {
-      if (!editor) return;
-
-      if (editor.document.fileName.endsWith('data/project-repository/dev-test/index.html')) {
-
-          await new Promise(r => setTimeout(r, 1000));
-
-          try {
-              await vscode.commands.executeCommand('extension.liveServer.goOnline');
-              vscode.window.showInformationMessage('Sprout: Decap CMS launched on Live Server 🚀');
-          } catch (err) {
-              console.error('Failed to launch Live Server:', err);
-          }
-      }
-  });
-  context.subscriptions.push(listener);
-
-  vscode.workspace.onDidChangeTextDocument(event => {
-      if (tempFileCopyUri && event.document.uri.toString() === tempFileCopyUri.toString()) {
-          const edit = new vscode.WorkspaceEdit();
-
-          edit.replace(
-              event.document.uri,
-              new vscode.Range(0, 0, event.document.lineCount, 0),
-              event.document.getText()
-          );
-          vscode.workspace.applyEdit(edit);
-      }
-  });
-
-  vscode.workspace.onDidChangeTextDocument(event => {
-      const uri = event.document.uri.toString();
-      const hintInfo = clickableHintLines.get(uri);
-
-      if (!hintInfo || !hintInfo.persistent_lenses) return;
-
-      event.contentChanges.forEach(change => {
-          const startLine = change.range.start.line + 1;
-          const endLine = change.range.end.line + 1;
-
-          hintInfo.persistent_lenses = hintInfo.persistent_lenses.filter(lens => {
-              const line = Number(lens.line);
-              const isWithinDeletedRange = line >= startLine && line <= endLine;
-              
-              return !isWithinDeletedRange;
-          });
-          
-          const linesAdded = change.text.split('\n').length - 1;
-          const linesRemoved = endLine - startLine;
-          const lineDelta = linesAdded - linesRemoved;
-
-          if (lineDelta !== 0) {
-            hintInfo.persistent_lenses = hintInfo.persistent_lenses.map(lens => {
-                const currentLine = Number(lens.line);
-                if (currentLine > startLine) {
-                    return { ...lens, line: currentLine + lineDelta };
-                }
-
-                return lens;
-            });
-          }
-      });
-
-      codeLensChangeEmitter.fire();
-  });
-
   function revealPanel(){
-    if (currentPanel) {
-        currentPanel.reveal(vscode.ViewColumn.One, true);
+    if (state.currentPanel) {
+        state.currentPanel.reveal(vscode.ViewColumn.One, true);
     } else {
         const extensionMediaUri = vscode.Uri.joinPath(context.extensionUri, 'media');
-        currentPanel = vscode.window.createWebviewPanel(
+        state.currentPanel = vscode.window.createWebviewPanel(
           'myRightPanel',
           'My Right Panel',
           { viewColumn: vscode.ViewColumn.One, preserveFocus: true },
           { enableScripts: true, enableFindWidget: true, localResourceRoots: [extensionMediaUri] }
         );
 
-        currentPanel.webview.onDidReceiveMessage(
+        state.currentPanel.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
                     case 'nextItem':
@@ -149,31 +93,24 @@ export function activate(context: vscode.ExtensionContext) {
             context.subscriptions
         );
 
-        currentPanel.onDidDispose(() => {
-          currentPanel = undefined;
+        state.currentPanel.onDidDispose(() => {
+          state.currentPanel = undefined;
         }, null, context.subscriptions);
     }
   }
 
-  const toggleHighlightDisposable = registerToggleHighlightCommand(leftProvider, () => tempFileCopyUri);
-  const sectionSelectedDisposable = registerLineClickedCommand(
-    context, leftProvider, fileProvider, treeView,
-    clickableHintLines, codeLensChangeEmitter,
-    () => tempFileCopyUri,
-    uri => tempFileCopyUri = uri,
-    uri => activeFileUri = uri,
-    () => currentPanel,
-    panel => currentPanel = panel,
-    updatePanelContent,
-    revealPanel
-  );
-
+  const toggleHighlightDisposable = registerToggleHighlightCommand(leftProvider, () => state.tempFileCopyUri);
   const nextItemDisposable = registerGoToNextItemCommand(leftProvider);
   const prevItemDisposable = registerGoToPrevItemCommand(leftProvider);
-  const showSolutionDisposable = registerShowSolutionCommand(leftProvider, fileProvider, () => tempFileCopyUri, () => activeFileUri);
+  const showSolutionDisposable = registerShowSolutionCommand(leftProvider, fileProvider, () => state.tempFileCopyUri, () => state.activeFileUri);
   const openFileDisposable = registerOpenFileCommand();
-  const showHintPopupDisposable = registerShowHintPopupCommand(leftProvider, () => currentPanel);
+  const showHintPopupDisposable = registerShowHintPopupCommand(leftProvider, () => state.currentPanel);
   const showInlineHintFromLensDisposable = registerShowInlineHintFromLensCommand(clickableHintLines);
+  const sectionSelectedDisposable = registerLineClickedCommand(
+    context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter,
+    () => state.tempFileCopyUri, uri => state.tempFileCopyUri = uri, uri => state.activeFileUri = uri, () => state.currentPanel, panel => state.currentPanel = panel,
+    updatePanelContent, revealPanel
+  );
 
   const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, {
     provideCodeLenses(document) {
@@ -221,6 +158,8 @@ export function activate(context: vscode.ExtensionContext) {
     toggleHighlightDisposable,
     sectionSelectedDisposable,
     vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
+    registerTempFileMirrorListener(() => state.tempFileCopyUri),
+    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter),
     hintSchema
   );
 }
