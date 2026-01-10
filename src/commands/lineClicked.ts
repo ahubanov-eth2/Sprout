@@ -32,7 +32,9 @@ export function registerLineClickedCommand(
     item: Section,
     siblings: Section[],
     currentIndex: number,
-    parentLabel: string
+    parentLabel: string,
+    fileProvider: FileTreeDataProvider,
+    clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>
   ) => void,
 
   revealPanel: () => void
@@ -66,7 +68,6 @@ export function registerLineClickedCommand(
               const tsIgnoreHeader = '// @ts-nocheck\n';
 
               const originalContent = fs.readFileSync(fileUri.fsPath,'utf-8');
-
               const tempFileContent = tsIgnoreHeader + originalContent;
 
               const tempUri = vscode.Uri.file(tempFilePath);
@@ -80,6 +81,7 @@ export function registerLineClickedCommand(
             await vscode.window.showTextDocument(doc,vscode.ViewColumn.One);
 
             setActiveFileUri(fileUri);
+            console.log("Active File URI set to:", fileUri.toString());
             isCodeFileOpen = true;
 
             let terminal = vscode.window.terminals.find(t => t.name === 'Sprout Terminal');
@@ -226,7 +228,9 @@ export function registerLineClickedCommand(
           item,
           siblings,
           currentIndex,
-          parentLabel
+          parentLabel,
+          fileProvider,
+          clickableHintLines
         );
       }
 

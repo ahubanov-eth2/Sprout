@@ -233,6 +233,19 @@
             transition: background-color 0.3s ease;
         }
 
+        .poi-link {
+            color: var(--vscode-textLink-foreground);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .poi-link:hover {
+            text-decoration: underline;
+        }
+        #poiContainer ul {
+            list-style: none;
+            padding-left: 10px;
+        }
+
     </style>
     </head>
     <body data-item-label="{{LABEL}}" data-has-file="{{HAS_FILE_TO_OPEN}}" style="font-family: sans-serif; padding: 1em;">
@@ -257,6 +270,8 @@
         {{PAGINATION}}
         <h2>{{TITLE}}</h2>
         <div>{{DESCRIPTION}}</div>
+
+        <div id="poiContainer">{{POINTS_OF_INTEREST}}</div>
 
         <div class="drawer-handle" id="drawerHandle">▲ Discover Hints and Solution</div>
 
@@ -423,6 +438,22 @@
                         command: 'prevItem',
                         label: currentItemLabel
                     });
+                });
+
+                document.getElementById('poiContainer').addEventListener('click', event => {
+                    const target = event.target.closest('.poi-link');
+                    // console.log("POI Link clicked"); // Debug log
+                    
+                    if (target) {
+                        event.preventDefault();
+                        const line = parseInt(target.dataset.line, 10);
+                        // console.log("POI Link clicked, line:", line); // Debug log
+                        
+                        vscode.postMessage({
+                            command: 'scrollToLine',
+                            line: line
+                        });
+                    }
                 });
             });
 
