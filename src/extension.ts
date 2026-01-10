@@ -76,6 +76,17 @@ export function activate(context: vscode.ExtensionContext) {
                     case 'goToIndex': 
                         vscode.commands.executeCommand('sprout.goToItemByIndex', message.label, message.index);
                         break;
+                    case 'scrollToLine':
+                        // console.log("Attempting to scroll. Current state.activeFileUri is:", state.activeFileUri?.toString());
+                        // const line = message.line;
+                        // const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === state.activeFileUri?.toString());
+
+                        // if (editor) {
+                        //     const range = new vscode.Range(line - 1, 0, line - 1, 0);
+                        //     editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+                        //     editor.selection = new vscode.Selection(range.start, range.end);
+                        // }
+                        break;
                     case 'nextItem':
                         vscode.commands.executeCommand('sprout.goToNextItem', message.label);
                         break; 
