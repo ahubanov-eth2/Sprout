@@ -37,8 +37,8 @@ export function getWebviewContent(
     if (siblings.length > 0) {
         paginationHtml = `<div class="pagination-container">`;
         for (let i = 0; i < siblings.length; i++) {
-            const className = i === currentIndex ? 'step-box active' : 'step-box';
-            paginationHtml += `<div class="${className}">${i + 1}</div>`;
+            const className = i === currentIndex ? 'step-box step-active' : 'step-box';
+            paginationHtml += `<button class="${className}" data-index="${i}" type="button">${i + 1}</button>`;
         }
         paginationHtml += `</div>`;
     }

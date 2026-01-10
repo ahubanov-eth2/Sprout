@@ -165,19 +165,31 @@
         }
 
         .step-box {
-            width: 30px;
-            height: 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #242d33;
+            background-color: #323232;
+            border: 1px solid #8a8a8a;
+            color: inherit;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 8px 16px;
             border-radius: 4px;
-            color: white;
-            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
 
-        .step-box.active {
-            background-color: #007acc;
+        .step-box:hover {
+            background-color: #434343;
+        }
+
+        .step-box.step-active {
+            background-color: #0078d4;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
 
         .drawer-handle {
@@ -382,19 +394,6 @@
                 document.getElementById('nextButton').addEventListener('click', () => {
 
                     closeDrawer();
-                    const highlightButton = document.getElementById('highlightLinesButton');
-                    
-                    if (highlightButton && highlightButton.classList.contains('active')) {
-                        highlightButton.classList.remove('active');
-                        highlightButton.textContent = 'Show Hint';
-                        highlightButton.style.backgroundColor = '#0078d4';
-
-                        vscode.postMessage({
-                            command: 'toggleHighlight',
-                            label: currentItemLabel,
-                            active: false
-                        });
-                    }
 
                     vscode.postMessage({
                         command: 'nextItem',
@@ -405,25 +404,32 @@
                 document.getElementById('prevButton').addEventListener('click', () => {
 
                     closeDrawer();
-                    const highlightButton = document.getElementById('highlightLinesButton');
-                    
-                    if (highlightButton && highlightButton.classList.contains('active')) {
-                        highlightButton.classList.remove('active');
-                        highlightButton.textContent = 'Show Hint';
-                        highlightButton.style.backgroundColor = '#0078d4';
-
-                        vscode.postMessage({
-                            command: 'toggleHighlight',
-                            label: currentItemLabel,
-                            active: false
-                        });
-                    }
 
                     vscode.postMessage({
                         command: 'prevItem',
                         label: currentItemLabel
                     });
                 });
+
+                const pagination = document.querySelector('.pagination-container');
+                if (pagination) {
+                    pagination.addEventListener('click', (event) => {
+                        const box = event.target.closest('.step-box');
+                        if (!box || box.classList.contains('step-active')) {
+                            return;
+                        }
+
+                        closeDrawer();
+
+                        const targetIndex = Number(box.dataset.index);
+
+                            vscode.postMessage({
+                            command: 'goToIndex',
+                            label: currentItemLabel,
+                            index: targetIndex
+                        });
+                    });
+                }
             });
 
             function showPopup(buttonElement, text) {

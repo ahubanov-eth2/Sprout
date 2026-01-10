@@ -39,6 +39,9 @@ export function registerLineClickedCommand(
 ): vscode.Disposable {
 
   return vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
+
+      console.log("In line clicked")
+
       const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
       const parent = leftProvider.findParent(leftProvider.getRoot(),item);
 
@@ -158,9 +161,9 @@ export function registerLineClickedCommand(
       if (isCodeFileOpen) {
 
         const currentPanel = getCurrentPanel();
-        if (currentPanel) {
-          currentPanel.dispose();
-        }
+        if (currentPanel) { currentPanel.dispose(); }
+
+        console.log("disposed of current panel")
 
         const panel =
           vscode.window.createWebviewPanel(
@@ -181,35 +184,23 @@ export function registerLineClickedCommand(
         panel.webview.onDidReceiveMessage(
           message => {
             switch (message.command) {
+              case 'goToIndex': 
+                vscode.commands.executeCommand('sprout.goToItemByIndex', message.label, message.index);
+                break;
               case 'nextItem':
-                vscode.commands.executeCommand(
-                  'sprout.goToNextItem',
-                  message.label
-                );
+                vscode.commands.executeCommand('sprout.goToNextItem',message.label);
                 break;
               case 'prevItem':
-                vscode.commands.executeCommand(
-                  'sprout.goToPrevItem',
-                  message.label
-                );
+                vscode.commands.executeCommand('sprout.goToPrevItem',message.label);
                 break;
               case 'showSolution':
-                vscode.commands.executeCommand(
-                  'sprout.showSolution',
-                  message.label
-                );
+                vscode.commands.executeCommand('sprout.showSolution',message.label);
                 break;
               case 'getHintText':
-                vscode.commands.executeCommand(
-                  'sprout.showHintPopup',
-                  message.label
-                );
+                vscode.commands.executeCommand('sprout.showHintPopup',message.label);
                 break;
               case 'toggleHighlight':
-                vscode.commands.executeCommand(
-                  'sprout.toggleHighlight',
-                  message.label
-                );
+                vscode.commands.executeCommand('sprout.toggleHighlight',message.label);
                 break;
             }
           },

@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import { TaskProvider } from './taskProvider.js'
 import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 
+import { registerGoToItemByIndexCommand } from './commands/goToItemByIndex.js';
 import { registerGoToNextItemCommand } from './commands/goToNextItem.js';
 import { registerGoToPrevItemCommand } from './commands/goToPreviousItem.js';
 import { registerOpenFileCommand } from './commands/openFile.js';
@@ -72,6 +73,9 @@ export function activate(context: vscode.ExtensionContext) {
         state.currentPanel.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
+                    case 'goToIndex': 
+                        vscode.commands.executeCommand('sprout.goToItemByIndex', message.label, message.index);
+                        break;
                     case 'nextItem':
                         vscode.commands.executeCommand('sprout.goToNextItem', message.label);
                         break; 
@@ -99,6 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
+  const findPageByIndexDisposable = registerGoToItemByIndexCommand(leftProvider);
   const toggleHighlightDisposable = registerToggleHighlightCommand(leftProvider, () => state.tempFileCopyUri);
   const nextItemDisposable = registerGoToNextItemCommand(leftProvider);
   const prevItemDisposable = registerGoToPrevItemCommand(leftProvider);
@@ -157,6 +162,7 @@ export function activate(context: vscode.ExtensionContext) {
     codeLensProviderDisposable,
     toggleHighlightDisposable,
     sectionSelectedDisposable,
+    findPageByIndexDisposable,
     vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
     registerTempFileMirrorListener(() => state.tempFileCopyUri),
     registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context),
