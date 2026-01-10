@@ -98,7 +98,13 @@ export function registerLineClickedCommand(
 
             if (configData.persistentLenses && codeEditor) {
 
+              const savedLenses =
+                context.workspaceState.get<PersistentLens[]>(
+                  `sprout:persistentLenses:${fileUri.toString()}`
+                );
+
               const persistentLenses =
+                savedLenses ??
                 (configData.persistentLenses || [])
                   .map(l => ({
                     line: Number(l.line),

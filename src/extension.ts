@@ -159,7 +159,7 @@ export function activate(context: vscode.ExtensionContext) {
     sectionSelectedDisposable,
     vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
     registerTempFileMirrorListener(() => state.tempFileCopyUri),
-    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter),
+    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context),
     hintSchema
   );
 }

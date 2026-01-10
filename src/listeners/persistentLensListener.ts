@@ -11,7 +11,8 @@ type HintInfo = {
 
 export function registerPersistentLensListener(
   clickableHintLines: Map<string, HintInfo>,
-  codeLensChangeEmitter: vscode.EventEmitter<void>
+  codeLensChangeEmitter: vscode.EventEmitter<void>,
+  context: vscode.ExtensionContext
 ): vscode.Disposable {
   return vscode.workspace.onDidChangeTextDocument(event => {
     const uri = event.document.uri.toString();
@@ -39,6 +40,12 @@ export function registerPersistentLensListener(
           }
           return lens;
         });
+
+        context.workspaceState.update(
+          `sprout:persistentLenses:${uri}`,
+          hintInfo.persistent_lenses
+        );
+
       }
     });
 
