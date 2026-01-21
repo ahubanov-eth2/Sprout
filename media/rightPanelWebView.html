@@ -122,12 +122,12 @@
         }
 
         #nextButton {
-            background-color: #0078d4;
-            border: none;
+            background-color: #323232;
+            border: 1px solid #8a8a8a;
         }
 
         #nextButton:hover {
-            background-color: #007ede;
+            background-color: #434343;
         }
 
         #highlightLinesButton, #showSolutionButton {
@@ -258,6 +258,79 @@
             padding-left: 10px;
         }
 
+        .inline-drawer {
+            margin: 24px 0;
+            border: 1px solid var(--vscode-editorGroup-border);
+            border-radius: 6px;
+        }
+
+        .inline-drawer-handle {
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            user-select: none;
+            color: white;
+            background-color: #0078d4;
+            border-radius: 6px;
+        }
+
+        .inline-drawer-handle:hover {
+            background-color: #007ede;
+            border-radius: 6px;
+        }
+
+        .inline-drawer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+            padding: 0 16px;
+            background-color: var(--vscode-editor-background);
+        }
+
+        .inline-drawer.open .inline-drawer-content {
+            padding: 0 16px 16px 16px;
+        }
+
+        .inline-drawer-text {
+            margin: 12px 0 16px 0;
+            color: var(--vscode-descriptionForeground);
+            font-size: 14px;
+        }
+
+        .inline-drawer-buttons {
+            display: flex;
+            gap: 16px;
+        }
+
+        .inline-drawer-buttons button {
+            flex: 1;
+            font-size: 16px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            background-color: #0078d4;
+            transition: background-color 0.3s ease;
+        }
+
+        .inline-drawer-buttons button:hover {
+            background-color: #007ede;
+        }
+
+        .inline-drawer-checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .inline-drawer-checklist label {
+            cursor: pointer;
+            font-size: 14px;
+        }
+
     </style>
     </head>
     <body data-item-label="{{LABEL}}" data-has-file="{{HAS_FILE_TO_OPEN}}" style="font-family: sans-serif; padding: 1em;">
@@ -284,6 +357,48 @@
         <div>{{DESCRIPTION}}</div>
 
         <div id="poiContainer">{{POINTS_OF_INTEREST}}</div>
+
+        <div class="inline-drawer">
+            <div class="inline-drawer-handle" id="inlineDrawerHandle">
+                ▼ Are you ready to move forward?
+            </div>
+
+            <div class="inline-drawer-content" id="inlineDrawerContent">
+                <p class="inline-drawer-text">
+                    Please review your changes and make sure you're confident in them. Check the boxes below:
+                </p>
+
+                <div class="inline-drawer-checklist">
+                    <label>
+                        <input type="checkbox" data-check-id="read-solution">
+                        I have defined a new styled component and have set the min-width in its style.
+                    </label>
+
+                    <label>
+                        <input type="checkbox" data-check-id="understand-changes">
+                        I have used the new styled component where appropriate.
+                    </label>
+
+                    <label>
+                        <input type="checkbox" data-check-id="understand-changes">
+                        I have made the dropdown menu wider.
+                    </label>
+                </div>
+
+                <p class="inline-drawer-text">
+                    You can have a look at an example solution or you can move on directly to the next step.
+                </p>
+
+                <div class="inline-drawer-buttons">
+                    <button id="inlineShowSolutionButton">
+                        Show solution
+                    </button>
+                    <button id="inlineNextButton">
+                        Next step
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <div class="drawer-handle" id="drawerHandle">▲ Discover Hints and Solution</div>
 
@@ -358,10 +473,44 @@
                 const drawer = document.getElementById('bottomDrawer');
                 const handle = document.getElementById('drawerHandle');
 
+                                const inlineDrawer = document.querySelector('.inline-drawer');
+                const inlineHandle = document.getElementById('inlineDrawerHandle');
+                const inlineContent = document.getElementById('inlineDrawerContent');
+
+                inlineHandle.addEventListener('click', () => {
+                    const isOpen = inlineDrawer.classList.toggle('open');
+
+                    if (isOpen) {
+                        inlineContent.style.maxHeight = inlineContent.scrollHeight + 'px';
+                        inlineHandle.textContent = '▲ Hide';
+                    } else {
+                        inlineContent.style.maxHeight = '0';
+                        inlineHandle.textContent = '▼ Are you ready to move forward?';
+                    }
+                });
+
+                const inlineShowSolutionButton = document.getElementById('inlineShowSolutionButton');
+                const inlineNextButton = document.getElementById('inlineNextButton');
+
+                inlineShowSolutionButton.addEventListener('click', () => {
+                    vscode.postMessage({
+                        command: 'showSolution',
+                        label: currentItemLabel,
+                    });
+                });
+
+                inlineNextButton.addEventListener('click', () => {
+                    vscode.postMessage({
+                        command: 'nextItem',
+                        label: currentItemLabel,
+                    });
+                });
+
                 if (!hasFileToOpen) {
                     highlightButton?.remove();
                     solutionButton?.remove();
 
+                    inlineDrawer.style.display = 'none';
                     drawer.style.display = 'none'
                     handle.style.display = 'none'
                 }
