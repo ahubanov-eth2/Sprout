@@ -11,4 +11,5 @@ export interface ConfigData {
   diffLineRangesCurrent? : Array<[number, number]>,
   hint? : string
   persistentLenses? : PersistentLens[]
+  diffPoints? : PersistentLens[]
 }

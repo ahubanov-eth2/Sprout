@@ -18,11 +18,6 @@ export function registerShowInlineHintFromLensCommand(
 
       const lineToShow = lens.line - 1;
       showInlineHint(editor, lineToShow, lens.explanation);
-
-      // const rangeClicked = info.lines.find(([start, end]) => line >= start && line <= end);
-      // if (rangeClicked) {
-      //   showInlineHint(editor, rangeClicked, info.hintText);
-      // }
     }
   );
 }

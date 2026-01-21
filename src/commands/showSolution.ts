@@ -7,12 +7,13 @@ import { exec } from 'child_process';
 import { TaskProvider } from '../taskProvider.js';
 import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
 import { ConfigData } from '../types/config.js';
+import { decorateDiffEditor } from '../extension.js';
 
 export function registerShowSolutionCommand(
   leftProvider: TaskProvider,
   fileProvider: FileTreeDataProvider,
   getTempFileCopyUri: () => vscode.Uri | undefined,
-  getActiveFileUri: () => vscode.Uri | undefined
+  getActiveFileUri: () => vscode.Uri | undefined,
 ): vscode.Disposable {
 
   return vscode.commands.registerCommand('sprout.showSolution', async (label: string) => {
@@ -31,6 +32,8 @@ export function registerShowSolutionCommand(
         const config = fs.readFileSync(currentItem.configFilePath, 'utf8');
         configData = JSON.parse(config);
       }
+
+      const diffPoints = configData.diffPoints ?? [];
 
       const previousCommit = configData.previousStepCommit ?? process.env.PARENT_COMMIT;
       const solutionCommit = configData.solutionCommit ?? process.env.COMMIT;
@@ -84,6 +87,22 @@ export function registerShowSolutionCommand(
           title,
           { viewColumn: vscode.ViewColumn.Active, preview: false }
         );
+
+        setTimeout(() => {
+          for (const editor of vscode.window.visibleTextEditors) {
+            if (editor.document.uri.toString() === solutionTempFileUri.toString()) {
+              if (!diffPoints.length) return;
+
+              decorateDiffEditor(
+                editor,
+                diffPoints.map(diff_point => ({
+                  line: diff_point.line - 1,
+                  explanation: diff_point.explanation
+                }))
+              );
+            }
+          }
+        }, 100);
 
       } catch (e: any) {
         vscode.window.showErrorMessage(e.message);

@@ -42,8 +42,6 @@ export function registerLineClickedCommand(
 
   return vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
 
-      console.log("In line clicked")
-
       const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
       const parent = leftProvider.findParent(leftProvider.getRoot(),item);
 
