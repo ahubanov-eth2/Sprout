@@ -195,7 +195,7 @@ function makeHover(explanation: string, uri: vscode.Uri, line: number) {
 
 const diffHintDecoration = vscode.window.createTextEditorDecorationType({
   before: {
-    contentText: '💬',
+    contentText: '💡',
     margin: '0 0 0 0rem'
   },
   rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
