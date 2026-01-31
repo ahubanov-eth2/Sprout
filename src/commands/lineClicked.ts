@@ -28,19 +28,20 @@ export function registerLineClickedCommand(
   setCurrentPanel: (panel: vscode.WebviewPanel | undefined) => void,
 
   updatePanelContent: (
+    context: vscode.ExtensionContext,
     panel: vscode.WebviewPanel,
     item: Section,
     siblings: Section[],
     currentIndex: number,
-    parentLabel: string
+    parentLabel: string,
+    fileProvider: FileTreeDataProvider,
+    clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>
   ) => void,
 
   revealPanel: () => void
 ): vscode.Disposable {
 
   return vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
-
-      console.log("In line clicked")
 
       const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
       const parent = leftProvider.findParent(leftProvider.getRoot(),item);
@@ -69,7 +70,6 @@ export function registerLineClickedCommand(
               const tsIgnoreHeader = '// @ts-nocheck\n';
 
               const originalContent = fs.readFileSync(fileUri.fsPath,'utf-8');
-
               const tempFileContent = tsIgnoreHeader + originalContent;
 
               const tempUri = vscode.Uri.file(tempFilePath);
@@ -83,6 +83,7 @@ export function registerLineClickedCommand(
             await vscode.window.showTextDocument(doc,vscode.ViewColumn.One);
 
             setActiveFileUri(fileUri);
+            console.log("Active File URI set to:", fileUri.toString());
             isCodeFileOpen = true;
 
             let terminal = vscode.window.terminals.find(t => t.name === 'Sprout Terminal');
@@ -202,6 +203,12 @@ export function registerLineClickedCommand(
               case 'toggleHighlight':
                 vscode.commands.executeCommand('sprout.toggleHighlight',message.label);
                 break;
+              case 'saveChecklistState':
+                context.workspaceState.update(
+                    `sprout:checklist:${message.label}`,
+                    message.state
+                );
+                break;  
             }
           },
           undefined,
@@ -219,11 +226,14 @@ export function registerLineClickedCommand(
       const panel = getCurrentPanel();
       if (panel) {
         updatePanelContent(
+          context,
           panel,
           item,
           siblings,
           currentIndex,
-          parentLabel
+          parentLabel,
+          fileProvider,
+          clickableHintLines
         );
       }
 

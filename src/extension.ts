@@ -27,6 +27,8 @@ const hintDecorationType = vscode.window.createTextEditorDecorationType({backgro
 const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
 const scheme = 'sprouthint';
 
+type ChecklistState = Record<string, boolean>;
+
 type ExtensionState = {
   currentPanel?: vscode.WebviewPanel;
   activeFileUri?: vscode.Uri;
@@ -76,6 +78,17 @@ export function activate(context: vscode.ExtensionContext) {
                     case 'goToIndex': 
                         vscode.commands.executeCommand('sprout.goToItemByIndex', message.label, message.index);
                         break;
+                    case 'scrollToLine':
+                        // console.log("Attempting to scroll. Current state.activeFileUri is:", state.activeFileUri?.toString());
+                        // const line = message.line;
+                        // const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === state.activeFileUri?.toString());
+
+                        // if (editor) {
+                        //     const range = new vscode.Range(line - 1, 0, line - 1, 0);
+                        //     editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+                        //     editor.selection = new vscode.Selection(range.start, range.end);
+                        // }
+                        break;
                     case 'nextItem':
                         vscode.commands.executeCommand('sprout.goToNextItem', message.label);
                         break; 
@@ -91,6 +104,12 @@ export function activate(context: vscode.ExtensionContext) {
                     case 'toggleHighlight':
                         vscode.commands.executeCommand('sprout.toggleHighlight', message.label);
                         break;
+                    case 'saveChecklistState':
+                        context.workspaceState.update(
+                            `sprout:checklist:${message.label}`,
+                            message.state
+                        );
+                        break;  
                 }
             },
             undefined,
@@ -171,3 +190,38 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {}
+
+function makeHover(explanation: string, uri: vscode.Uri, line: number) {
+  const md = new vscode.MarkdownString(
+    `**Why make this change?**\n\n` +
+    `${explanation}`
+  );
+
+  md.isTrusted = true;
+  return md;
+}
+
+const diffHintDecoration = vscode.window.createTextEditorDecorationType({
+  before: {
+    contentText: '💡',
+    margin: '0 0 0 0rem'
+  },
+  rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+});
+
+export function decorateDiffEditor(
+  editor: vscode.TextEditor,
+  hints: { line: number; explanation: string }[]
+) {
+  const decorations: vscode.DecorationOptions[] = hints.map(hint => {
+    const line = editor.document.lineAt(hint.line);
+
+    return {
+      range: new vscode.Range(hint.line, 0, hint.line, line.text.length),
+      hoverMessage: makeHover(hint.explanation, editor.document.uri, hint.line)
+    };
+  });
+
+  editor.setDecorations(diffHintDecoration, decorations);
+}
+

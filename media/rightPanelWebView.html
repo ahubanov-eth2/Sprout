@@ -122,12 +122,12 @@
         }
 
         #nextButton {
-            background-color: #0078d4;
-            border: none;
+            background-color: #323232;
+            border: 1px solid #8a8a8a;
         }
 
         #nextButton:hover {
-            background-color: #007ede;
+            background-color: #434343;
         }
 
         #highlightLinesButton, #showSolutionButton {
@@ -245,9 +245,116 @@
             transition: background-color 0.3s ease;
         }
 
+        .poi-link {
+            color: var(--vscode-textLink-foreground);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .poi-link:hover {
+            text-decoration: underline;
+        }
+        #poiContainer ul {
+            list-style: none;
+            padding-left: 10px;
+        }
+
+        .inline-drawer {
+            margin: 24px 0;
+            border: 1px solid var(--vscode-editorGroup-border);
+            border-radius: 6px;
+        }
+
+        .inline-drawer-handle {
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            user-select: none;
+            color: white;
+            background-color: #0078d4;
+            border-radius: 6px;
+        }
+
+        .inline-drawer-handle:hover {
+            background-color: #007ede;
+            border-radius: 6px;
+        }
+
+        .inline-drawer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+            padding: 0 16px;
+            background-color: var(--vscode-editor-background);
+        }
+
+        .inline-drawer.open .inline-drawer-content {
+            padding: 0 16px 16px 16px;
+        }
+
+        .inline-drawer-text {
+            margin: 12px 0 16px 0;
+            color: var(--vscode-descriptionForeground);
+            font-size: 14px;
+        }
+
+        .inline-drawer-buttons {
+            display: flex;
+            gap: 16px;
+        }
+
+        .inline-drawer-buttons button {
+            flex: 1;
+            font-size: 16px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            background-color: #0078d4;
+            transition: background-color 0.3s ease;
+        }
+
+        .inline-drawer-buttons button:hover {
+            background-color: #007ede;
+        }
+
+        .inline-drawer-checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .inline-drawer-checklist label {
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .progress-container {
+            height: 4px;
+            width: 100%;
+            background-color: var(--vscode-editorGroup-border);
+            border-radius: 2px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #0078d4;
+            transition: width 0.25s ease;
+        }
+
     </style>
     </head>
     <body data-item-label="{{LABEL}}" data-has-file="{{HAS_FILE_TO_OPEN}}" style="font-family: sans-serif; padding: 1em;">
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
         <div class="header-container">
             <div class="breadcrumbs">
                 <span class="parent-title">{{PARENT_TITLE}}</span>
@@ -270,6 +377,35 @@
         <h2>{{TITLE}}</h2>
         <div>{{DESCRIPTION}}</div>
 
+        <div id="poiContainer">{{POINTS_OF_INTEREST}}</div>
+
+        <div class="inline-drawer">
+            <div class="inline-drawer-handle" id="inlineDrawerHandle">
+                ▼ Are you ready to move forward?
+            </div>
+
+            <div class="inline-drawer-content" id="inlineDrawerContent">
+                <p class="inline-drawer-text">
+                    Please review your changes and make sure you're confident in them. Check the boxes below:
+                </p>
+
+                {{CHECKLIST}}
+
+                <p class="inline-drawer-text">
+                    You can have a look at an example solution or you can move on directly to the next step.
+                </p>
+
+                <div class="inline-drawer-buttons">
+                    <button id="inlineShowSolutionButton">
+                        Show solution
+                    </button>
+                    <button id="inlineNextButton">
+                        Next step
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="drawer-handle" id="drawerHandle">▲ Discover Hints and Solution</div>
 
         <div class="bottom-drawer" id="bottomDrawer">
@@ -278,6 +414,10 @@
                 {{SHOW_SOLUTION_BUTTON}}
             </div>
         </div>
+
+        <script id="checklist-state" type="application/json">
+            {{CHECKLIST_STATE}}
+        </script>
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
@@ -343,12 +483,91 @@
                 const drawer = document.getElementById('bottomDrawer');
                 const handle = document.getElementById('drawerHandle');
 
+                const inlineDrawer = document.querySelector('.inline-drawer');
+                const inlineHandle = document.getElementById('inlineDrawerHandle');
+                const inlineContent = document.getElementById('inlineDrawerContent');
+
+                const progressContainer = document.getElementById('progressContainer');
+
+                inlineHandle.addEventListener('click', () => {
+                    const isOpen = inlineDrawer.classList.toggle('open');
+
+                    if (isOpen) {
+                        inlineContent.style.maxHeight = inlineContent.scrollHeight + 'px';
+                        inlineHandle.textContent = '▲ Hide';
+                    } else {
+                        inlineContent.style.maxHeight = '0';
+                        inlineHandle.textContent = '▼ Are you ready to move forward?';
+                    }
+                });
+
+                const inlineShowSolutionButton = document.getElementById('inlineShowSolutionButton');
+                const inlineNextButton = document.getElementById('inlineNextButton');
+
+                inlineShowSolutionButton.addEventListener('click', () => {
+                    vscode.postMessage({
+                        command: 'showSolution',
+                        label: currentItemLabel,
+                    });
+                });
+
+                inlineNextButton.addEventListener('click', () => {
+                    vscode.postMessage({
+                        command: 'nextItem',
+                        label: currentItemLabel,
+                    });
+                });
+
+                const progressBar = document.getElementById('progressBar');
+                const checkboxes = [
+                    ...document.querySelectorAll('.inline-drawer-checklist input[type="checkbox"]')
+                ];
+
+                function updateProgress() {
+                    if (!progressBar || checkboxes.length === 0) return;
+
+                    const state = {};
+                    checkboxes.forEach(cb => {
+                        state[cb.dataset.checkId] = cb.checked;
+                    });
+
+                    const checkedCount = Object.values(state).filter(Boolean).length;
+                    const percent = Math.round((checkedCount / checkboxes.length) * 100);
+
+                    progressBar.style.width = percent + '%';
+
+                    vscode.postMessage({
+                        command: 'saveChecklistState',
+                        label: currentItemLabel,
+                        state
+                    });
+                }
+
+                const savedStateEl = document.getElementById('checklist-state');
+                const savedState = savedStateEl
+                    ? JSON.parse(savedStateEl.textContent)
+                    : {};
+
+                checkboxes.forEach(cb => {
+                    cb.checked = !!savedState[cb.dataset.checkId];
+                });
+
+                updateProgress();
+
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', updateProgress);
+                });
+
+                updateProgress();
+
                 if (!hasFileToOpen) {
                     highlightButton?.remove();
                     solutionButton?.remove();
 
-                    drawer.style.display = 'none'
-                    handle.style.display = 'none'
+                    inlineDrawer.style.display = 'none';
+                    drawer.style.display = 'none';
+                    handle.style.display = 'none';
+                    progressContainer.style.display = 'none';
                 }
 
                 handle.addEventListener('click', () => {
@@ -430,6 +649,20 @@
                         });
                     });
                 }
+                
+                document.getElementById('poiContainer').addEventListener('click', event => {
+                    const target = event.target.closest('.poi-link');
+                    
+                    if (target) {
+                        event.preventDefault();
+                        const line = parseInt(target.dataset.line, 10);
+                        
+                        vscode.postMessage({
+                            command: 'scrollToLine',
+                            line: line
+                        });
+                    }
+                });
             });
 
             function showPopup(buttonElement, text) {
@@ -466,7 +699,6 @@
                     handle.textContent = "▲ More";
                 }
             }
-
         </script>
 
     </body>

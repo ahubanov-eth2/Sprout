@@ -1,15 +1,23 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path from 'path';
 import { marked } from 'marked';
+
+import { ChecklistItem } from '../types/config.js';
 import { ConfigData } from '../types/config.js';
 import { Section } from '../taskProvider.js'
+import { PersistentLens } from '../types/lens.js';
+import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
 
 export function getWebviewContent(
   item: any, 
   siblings: Section[], 
   currentIndex: number,
   parentLabel: string,
-  webview: vscode.Webview
+  webview: vscode.Webview,
+  fileProvider: FileTreeDataProvider,
+  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>,
+  checklistState: Record<string, boolean>
 ): string 
 {
     const mediaFolderUri = vscode.Uri.joinPath(
@@ -99,10 +107,59 @@ export function getWebviewContent(
       </button>
     `;
 
+    let pointsOfInterestHtml = '';
+    if (configData.codeFileToEdit) {
+      const repoDirectory = fileProvider.getRepoPath() as string;
+      const absolutePath = path.join(repoDirectory, configData.codeFileToEdit as string);
+      const fileUri = vscode.Uri.file(absolutePath);
+      const mapKey = fileUri.toString(); 
 
+      const hintInfo = clickableHintLines.get(mapKey);
+
+      if (hintInfo && hintInfo.persistent_lenses) {
+          pointsOfInterestHtml = '<div><strong>Points of interest:</strong><ul>';
+          hintInfo.persistent_lenses.forEach((pl: any) => {
+              pointsOfInterestHtml += `
+                  <li>
+                      <a href="#" class="poi-link" data-line="${pl.line}">
+                          Line ${pl.line}
+                      </a>
+                  </li>`;
+          });
+          pointsOfInterestHtml += '</ul></div>';
+      }
+    }
+
+    const checklistHtml = renderChecklist(configData.checklist);
+
+    htmlContent = htmlContent.replace('{{POINTS_OF_INTEREST}}', pointsOfInterestHtml);
     htmlContent = htmlContent.replace('{{HIGHLIGHT_LINES_BUTTON}}', highlightLinesHtml);
     htmlContent = htmlContent.replace('{{SHOW_SOLUTION_BUTTON}}', showSolutionHtml);
     htmlContent = htmlContent.replace('{{HAS_FILE_TO_OPEN}}', configData.codeFileToEdit ? 'true' : 'false');
+    
+    htmlContent = htmlContent.replace('{{CHECKLIST}}', checklistHtml);
+
+    htmlContent = htmlContent.replace(
+      '{{CHECKLIST_STATE}}',
+      JSON.stringify(checklistState)
+    );
 
     return htmlContent;
+}
+
+function renderChecklist(checklist?: ChecklistItem[]): string {
+  if (!checklist || checklist.length === 0) {
+    return '';
+  }
+
+  return `
+    <div class="inline-drawer-checklist">
+      ${checklist.map(item => `
+        <label>
+          <input type="checkbox" data-check-id="${item.id}">
+          ${item.text}
+        </label>
+      `).join('')}
+    </div>
+  `;
 }

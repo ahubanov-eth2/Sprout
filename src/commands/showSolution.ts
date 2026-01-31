@@ -7,12 +7,13 @@ import { exec } from 'child_process';
 import { TaskProvider } from '../taskProvider.js';
 import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
 import { ConfigData } from '../types/config.js';
+import { decorateDiffEditor } from '../extension.js';
 
 export function registerShowSolutionCommand(
   leftProvider: TaskProvider,
   fileProvider: FileTreeDataProvider,
   getTempFileCopyUri: () => vscode.Uri | undefined,
-  getActiveFileUri: () => vscode.Uri | undefined
+  getActiveFileUri: () => vscode.Uri | undefined,
 ): vscode.Disposable {
 
   return vscode.commands.registerCommand('sprout.showSolution', async (label: string) => {
@@ -28,36 +29,21 @@ export function registerShowSolutionCommand(
 
       let configData: ConfigData = {};
       if (currentItem && currentItem.configFilePath) {
-        const config = fs.readFileSync(
-          currentItem.configFilePath,
-          'utf8'
-        );
+        const config = fs.readFileSync(currentItem.configFilePath, 'utf8');
         configData = JSON.parse(config);
       }
 
-      // const lineRangesCurrent =
-      //   configData.diffLineRangesCurrent as [number, number][];
-      // const lineRangesSolution =
-      //   configData.hintLineRangesSolution as [number, number][];
+      const diffPoints = configData.diffPoints ?? [];
 
-      // const startLineCurrent = lineRangesCurrent[0][0];
-      // const endLineCurrent =
-      //   lineRangesCurrent[lineRangesCurrent.length - 1][1];
-
-      // const startLineSolution = lineRangesSolution[0][0];
-      // const endLineSolution =
-      //   lineRangesSolution[lineRangesSolution.length - 1][1];
+      const previousCommit = configData.previousStepCommit ?? process.env.PARENT_COMMIT;
+      const solutionCommit = configData.solutionCommit ?? process.env.COMMIT;
 
       const repoPath = fileProvider.getRepoPath() as string;
+      const relativeFilePath = path.relative(repoPath, activeFileUri.fsPath);
 
-      const relativeFilePath = path.relative(
-        repoPath,
-        activeFileUri.fsPath
-      );
+      const previousStepSolutionCommand = `git --git-dir=${path.join(repoPath,'.git')} show ${previousCommit}:${relativeFilePath}`;
+      const solutionCommand = `git --git-dir=${path.join(repoPath,'.git')} show ${solutionCommit}:${relativeFilePath}`;
 
-      const solutionCommand = `git --git-dir=${path.join(repoPath,'.git')} show ${process.env.COMMIT}:${relativeFilePath}`;
-
-      // let solutionContent: string;
       try {
         const solutionResult = await new Promise<string>((resolve, reject) => {
             exec(solutionCommand, { cwd: repoPath }, (err, stdout, stderr) => {
@@ -68,23 +54,16 @@ export function registerShowSolutionCommand(
             });
         });
 
-        // solutionContent = solutionResult;
-        const currentContent = fs.readFileSync(tempFileCopyUri.fsPath,'utf8');
+        const previousSolutionResult = await new Promise<string>((resolve, reject) => {
+            exec(previousStepSolutionCommand, { cwd: repoPath }, (err, stdout, stderr) => {
+                if (err) {
+                    reject(new Error(`Failed to get solution content: ${stderr}`));
+                }
+                resolve(stdout);
+            });
+        });
 
-        // let currentLines: string[] = [];
-        // if (hasCurrentRange) {
-        //   currentLines = currentContent
-        //     .split('\n')
-        //     .slice(startLineCurrent - 1, endLineCurrent);
-        // } else {
-        //   currentLines = [];
-        // }
-
-        // const solutionLines = solutionContent
-        //   .split('\n')
-        //   .slice(startLineSolution - 1, endLineSolution);
-
-        const currentTempFilePath = path.join(
+        const previousSolutionTempFilePath = path.join(
           os.tmpdir(),
           `current-temp-${path.basename(relativeFilePath)}`
         );
@@ -94,29 +73,36 @@ export function registerShowSolutionCommand(
           `solution-temp-${path.basename(relativeFilePath)}`
         );
 
-        const currentTempFileUri = vscode.Uri.file(currentTempFilePath);
-        const solutionTempFileUri =vscode.Uri.file(solutionTempFilePath);
+        const prevSolutionFileUri = vscode.Uri.file(previousSolutionTempFilePath);
+        const solutionTempFileUri = vscode.Uri.file(solutionTempFilePath);
 
-        // fs.writeFileSync(
-        //   currentTempFilePath,
-        //   currentLines.join('\n')
-        // );
-        // fs.writeFileSync(
-        //   solutionTempFilePath,
-        //   solutionLines.join('\n')
-        // );
+        fs.writeFileSync(previousSolutionTempFilePath, previousSolutionResult);
+        fs.writeFileSync(solutionTempFilePath, solutionResult);
 
-        fs.writeFileSync(currentTempFilePath,currentContent);
-        fs.writeFileSync(solutionTempFilePath,solutionResult);
-
-        const title = `Original vs Solution (${path.basename(relativeFilePath)})`;
+        const title = `Solution for current step (${path.basename(relativeFilePath)})`;
         await vscode.commands.executeCommand(
           'vscode.diff',
-          currentTempFileUri,
+          prevSolutionFileUri,
           solutionTempFileUri,
           title,
           { viewColumn: vscode.ViewColumn.Active, preview: false }
         );
+
+        setTimeout(() => {
+          for (const editor of vscode.window.visibleTextEditors) {
+            if (editor.document.uri.toString() === solutionTempFileUri.toString()) {
+              if (!diffPoints.length) return;
+
+              decorateDiffEditor(
+                editor,
+                diffPoints.map(diff_point => ({
+                  line: diff_point.line - 1,
+                  explanation: diff_point.explanation
+                }))
+              );
+            }
+          }
+        }, 100);
 
       } catch (e: any) {
         vscode.window.showErrorMessage(e.message);
