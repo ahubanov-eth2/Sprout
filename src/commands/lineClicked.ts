@@ -28,6 +28,7 @@ export function registerLineClickedCommand(
   setCurrentPanel: (panel: vscode.WebviewPanel | undefined) => void,
 
   updatePanelContent: (
+    context: vscode.ExtensionContext,
     panel: vscode.WebviewPanel,
     item: Section,
     siblings: Section[],
@@ -202,6 +203,12 @@ export function registerLineClickedCommand(
               case 'toggleHighlight':
                 vscode.commands.executeCommand('sprout.toggleHighlight',message.label);
                 break;
+              case 'saveChecklistState':
+                context.workspaceState.update(
+                    `sprout:checklist:${message.label}`,
+                    message.state
+                );
+                break;  
             }
           },
           undefined,
@@ -219,6 +226,7 @@ export function registerLineClickedCommand(
       const panel = getCurrentPanel();
       if (panel) {
         updatePanelContent(
+          context,
           panel,
           item,
           siblings,

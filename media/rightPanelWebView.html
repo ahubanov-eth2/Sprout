@@ -391,17 +391,17 @@
 
                 <div class="inline-drawer-checklist">
                     <label>
-                        <input type="checkbox" data-check-id="read-solution">
+                        <input type="checkbox" data-check-id="ministep1">
                         I have defined a new styled component and have set the min-width in its style.
                     </label>
 
                     <label>
-                        <input type="checkbox" data-check-id="understand-changes">
+                        <input type="checkbox" data-check-id="ministep2">
                         I have used the new styled component where appropriate.
                     </label>
 
                     <label>
-                        <input type="checkbox" data-check-id="understand-changes">
+                        <input type="checkbox" data-check-id="ministep3">
                         I have made the dropdown menu wider.
                     </label>
                 </div>
@@ -429,6 +429,10 @@
                 {{SHOW_SOLUTION_BUTTON}}
             </div>
         </div>
+
+        <script id="checklist-state" type="application/json">
+            {{CHECKLIST_STATE}}
+        </script>
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
@@ -533,15 +537,35 @@
                 ];
 
                 function updateProgress() {
-                    if (!progressBar || checkboxes.length === 0) {
-                        return;
-                    }
+                    if (!progressBar || checkboxes.length === 0) return;
 
-                    const checkedCount = checkboxes.filter(cb => cb.checked).length;
+                    const state = {};
+                    checkboxes.forEach(cb => {
+                        state[cb.dataset.checkId] = cb.checked;
+                    });
+
+                    const checkedCount = Object.values(state).filter(Boolean).length;
                     const percent = Math.round((checkedCount / checkboxes.length) * 100);
 
                     progressBar.style.width = percent + '%';
+
+                    vscode.postMessage({
+                        command: 'saveChecklistState',
+                        label: currentItemLabel,
+                        state
+                    });
                 }
+
+                const savedStateEl = document.getElementById('checklist-state');
+                const savedState = savedStateEl
+                    ? JSON.parse(savedStateEl.textContent)
+                    : {};
+
+                checkboxes.forEach(cb => {
+                    cb.checked = !!savedState[cb.dataset.checkId];
+                });
+
+                updateProgress();
 
                 checkboxes.forEach(cb => {
                     cb.addEventListener('change', updateProgress);

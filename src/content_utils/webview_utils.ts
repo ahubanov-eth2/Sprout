@@ -15,7 +15,8 @@ export function getWebviewContent(
   parentLabel: string,
   webview: vscode.Webview,
   fileProvider: FileTreeDataProvider,
-  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>
+  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>,
+  checklistState: Record<string, boolean>
 ): string 
 {
     const mediaFolderUri = vscode.Uri.joinPath(
@@ -132,6 +133,11 @@ export function getWebviewContent(
     htmlContent = htmlContent.replace('{{HIGHLIGHT_LINES_BUTTON}}', highlightLinesHtml);
     htmlContent = htmlContent.replace('{{SHOW_SOLUTION_BUTTON}}', showSolutionHtml);
     htmlContent = htmlContent.replace('{{HAS_FILE_TO_OPEN}}', configData.codeFileToEdit ? 'true' : 'false');
+
+    htmlContent = htmlContent.replace(
+      '{{CHECKLIST_STATE}}',
+      JSON.stringify(checklistState)
+    );
 
     return htmlContent;
 }

@@ -27,6 +27,8 @@ const hintDecorationType = vscode.window.createTextEditorDecorationType({backgro
 const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
 const scheme = 'sprouthint';
 
+type ChecklistState = Record<string, boolean>;
+
 type ExtensionState = {
   currentPanel?: vscode.WebviewPanel;
   activeFileUri?: vscode.Uri;
@@ -102,6 +104,12 @@ export function activate(context: vscode.ExtensionContext) {
                     case 'toggleHighlight':
                         vscode.commands.executeCommand('sprout.toggleHighlight', message.label);
                         break;
+                    case 'saveChecklistState':
+                        context.workspaceState.update(
+                            `sprout:checklist:${message.label}`,
+                            message.state
+                        );
+                        break;  
                 }
             },
             undefined,
