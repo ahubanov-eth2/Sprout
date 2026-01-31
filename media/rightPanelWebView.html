@@ -331,9 +331,30 @@
             font-size: 14px;
         }
 
+        /* .progress-container {
+            height: 4px;
+            width: 100%;
+            background-color: var(--vscode-editorGroup-border);
+            border-radius: 2px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #0078d4;
+            transition: width 0.25s ease;
+        } */
+
     </style>
     </head>
     <body data-item-label="{{LABEL}}" data-has-file="{{HAS_FILE_TO_OPEN}}" style="font-family: sans-serif; padding: 1em;">
+
+        <!-- <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div> -->
+
         <div class="header-container">
             <div class="breadcrumbs">
                 <span class="parent-title">{{PARENT_TITLE}}</span>
@@ -473,7 +494,7 @@
                 const drawer = document.getElementById('bottomDrawer');
                 const handle = document.getElementById('drawerHandle');
 
-                                const inlineDrawer = document.querySelector('.inline-drawer');
+                const inlineDrawer = document.querySelector('.inline-drawer');
                 const inlineHandle = document.getElementById('inlineDrawerHandle');
                 const inlineContent = document.getElementById('inlineDrawerContent');
 
@@ -505,6 +526,17 @@
                         label: currentItemLabel,
                     });
                 });
+
+                // const progressBar = document.getElementById('progressBar');
+                // const checkboxes = [
+                //     ...document.querySelectorAll('.inline-drawer-checklist input[type="checkbox"]')
+                // ];
+
+                // checkboxes.forEach(cb => {
+                //     cb.addEventListener('change', updateProgress);
+                // });
+
+                // updateProgress();
 
                 if (!hasFileToOpen) {
                     highlightButton?.remove();
@@ -644,6 +676,17 @@
                     handle.textContent = "▲ More";
                 }
             }
+
+            // function updateProgress() {
+            //     if (!progressBar || checkboxes.length === 0) {
+            //         return;
+            //     }
+
+            //     const checkedCount = checkboxes.filter(cb => cb.checked).length;
+            //     const percent = Math.round((checkedCount / checkboxes.length) * 100);
+
+            //     progressBar.style.width = percent + '%';
+            // }
 
         </script>
 
