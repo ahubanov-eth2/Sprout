@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { marked } from 'marked';
 
+import { ChecklistItem } from '../types/config.js';
 import { ConfigData } from '../types/config.js';
 import { Section } from '../taskProvider.js'
 import { PersistentLens } from '../types/lens.js';
@@ -129,10 +130,14 @@ export function getWebviewContent(
       }
     }
 
+    const checklistHtml = renderChecklist(configData.checklist);
+
     htmlContent = htmlContent.replace('{{POINTS_OF_INTEREST}}', pointsOfInterestHtml);
     htmlContent = htmlContent.replace('{{HIGHLIGHT_LINES_BUTTON}}', highlightLinesHtml);
     htmlContent = htmlContent.replace('{{SHOW_SOLUTION_BUTTON}}', showSolutionHtml);
     htmlContent = htmlContent.replace('{{HAS_FILE_TO_OPEN}}', configData.codeFileToEdit ? 'true' : 'false');
+    
+    htmlContent = htmlContent.replace('{{CHECKLIST}}', checklistHtml);
 
     htmlContent = htmlContent.replace(
       '{{CHECKLIST_STATE}}',
@@ -140,4 +145,21 @@ export function getWebviewContent(
     );
 
     return htmlContent;
+}
+
+function renderChecklist(checklist?: ChecklistItem[]): string {
+  if (!checklist || checklist.length === 0) {
+    return '';
+  }
+
+  return `
+    <div class="inline-drawer-checklist">
+      ${checklist.map(item => `
+        <label>
+          <input type="checkbox" data-check-id="${item.id}">
+          ${item.text}
+        </label>
+      `).join('')}
+    </div>
+  `;
 }
