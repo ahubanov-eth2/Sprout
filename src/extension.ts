@@ -29,7 +29,7 @@ const scheme = 'sprouthint';
 
 type ChecklistState = Record<string, boolean>;
 
-type ExtensionState = {
+export type ExtensionState = {
   currentPanel?: vscode.WebviewPanel;
   activeFileUri?: vscode.Uri;
   tempFileCopyUri?: vscode.Uri;
@@ -79,15 +79,15 @@ export function activate(context: vscode.ExtensionContext) {
                         vscode.commands.executeCommand('sprout.goToItemByIndex', message.label, message.index);
                         break;
                     case 'scrollToLine':
-                        // console.log("Attempting to scroll. Current state.activeFileUri is:", state.activeFileUri?.toString());
-                        // const line = message.line;
-                        // const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === state.activeFileUri?.toString());
+                        console.log("Attempting to scroll. Current state.activeFileUri is:", state.activeFileUri?.toString());
+                        const line = message.line;
+                        const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === state.activeFileUri?.toString());
 
-                        // if (editor) {
-                        //     const range = new vscode.Range(line - 1, 0, line - 1, 0);
-                        //     editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
-                        //     editor.selection = new vscode.Selection(range.start, range.end);
-                        // }
+                        if (editor) {
+                            const range = new vscode.Range(line - 1, 0, line - 1, 0);
+                            editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+                            editor.selection = new vscode.Selection(range.start, range.end);
+                        }
                         break;
                     case 'nextItem':
                         vscode.commands.executeCommand('sprout.goToNextItem', message.label);
@@ -131,7 +131,7 @@ export function activate(context: vscode.ExtensionContext) {
   const showHintPopupDisposable = registerShowHintPopupCommand(leftProvider, () => state.currentPanel);
   const showInlineHintFromLensDisposable = registerShowInlineHintFromLensCommand(clickableHintLines);
   const sectionSelectedDisposable = registerLineClickedCommand(
-    context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter,
+    context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter, state,
     () => state.tempFileCopyUri, uri => state.tempFileCopyUri = uri, uri => state.activeFileUri = uri, () => state.currentPanel, panel => state.currentPanel = panel,
     updatePanelContent, revealPanel
   );
