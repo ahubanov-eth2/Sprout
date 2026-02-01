@@ -115,12 +115,14 @@ export function registerLineClickedCommand(
               if (savedLenses && savedLenses.length > 0) {
                   persistentLenses = savedLenses.map((l, index) => ({
                       id: l.id || `lens-${index}`,
+                      title: String(l.title),
                       line: Number(l.line),
                       explanation: String(l.explanation)
                   }));
               } else {
                   persistentLenses = (configData.persistentLenses || []).map((l, index) => ({
                       id: `lens-${index}`,
+                      title: String(l.title),
                       line: Number(l.line),
                       explanation: String(l.explanation)
                   }));

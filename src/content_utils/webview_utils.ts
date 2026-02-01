@@ -122,7 +122,7 @@ export function getWebviewContent(
               pointsOfInterestHtml += `
                   <li>
                       <a href="#" class="poi-link" data-line="${pl.id}">
-                          Line ${pl.line}
+                          ${pl.title}
                       </a>
                   </li>`;
           });
