@@ -110,13 +110,21 @@ export function registerLineClickedCommand(
                   `sprout:persistentLenses:${fileUri.toString()}`
                 );
 
-              const persistentLenses =
-                savedLenses ??
-                (configData.persistentLenses || [])
-                  .map(l => ({
-                    line: Number(l.line),
-                    explanation: String(l.explanation)
+              let persistentLenses: PersistentLens[];
+
+              if (savedLenses && savedLenses.length > 0) {
+                  persistentLenses = savedLenses.map((l, index) => ({
+                      id: l.id || `lens-${index}`,
+                      line: Number(l.line),
+                      explanation: String(l.explanation)
                   }));
+              } else {
+                  persistentLenses = (configData.persistentLenses || []).map((l, index) => ({
+                      id: `lens-${index}`,
+                      line: Number(l.line),
+                      explanation: String(l.explanation)
+                  }));
+              }
 
               const hintInfo = {
                 lines: [],
@@ -186,7 +194,7 @@ export function registerLineClickedCommand(
         setCurrentPanel(panel);
 
         panel.webview.onDidReceiveMessage(
-          message => {
+          async message => {
             switch (message.command) {
               case 'goToIndex': 
                 vscode.commands.executeCommand('sprout.goToItemByIndex', message.label, message.index);
@@ -195,12 +203,18 @@ export function registerLineClickedCommand(
                 vscode.commands.executeCommand('sprout.goToNextItem',message.label);
                 break;
               case 'scrollToLine':
-                console.log("Attempting to scroll. Current state.activeFileUri is:", state.activeFileUri?.toString());
-                const line = message.line;
-                const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === state.activeFileUri?.toString());
+                const lensId = message.line;
+                if (!state.activeFileUri) return;
 
+                const hintInfo = clickableHintLines.get(state.activeFileUri.toString());
+                if (!hintInfo) return;
+
+                const lens = hintInfo.persistent_lenses.find(l => l.id === lensId);
+                if (!lens) return;
+
+                const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === state.activeFileUri?.toString());
                 if (editor) {
-                    const range = new vscode.Range(line - 1, 0, line - 1, 0);
+                    const range = new vscode.Range(lens.line - 1, 0, lens.line - 1, 0);
                     editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
                     editor.selection = new vscode.Selection(range.start, range.end);
                 }

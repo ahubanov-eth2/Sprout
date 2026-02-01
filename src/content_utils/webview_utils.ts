@@ -121,7 +121,7 @@ export function getWebviewContent(
           hintInfo.persistent_lenses.forEach((pl: any) => {
               pointsOfInterestHtml += `
                   <li>
-                      <a href="#" class="poi-link" data-line="${pl.line}">
+                      <a href="#" class="poi-link" data-line="${pl.id}">
                           Line ${pl.line}
                       </a>
                   </li>`;

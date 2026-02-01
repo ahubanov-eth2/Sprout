@@ -73,18 +73,24 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
         state.currentPanel.webview.onDidReceiveMessage(
-            message => {
+            async message => {
                 switch (message.command) {
                     case 'goToIndex': 
                         vscode.commands.executeCommand('sprout.goToItemByIndex', message.label, message.index);
                         break;
                     case 'scrollToLine':
-                        console.log("Attempting to scroll. Current state.activeFileUri is:", state.activeFileUri?.toString());
-                        const line = message.line;
+                        const lensId = message.line;
+                        if (!state.activeFileUri) return;
+        
+                        const hintInfo = clickableHintLines.get(state.activeFileUri.toString());
+                        if (!hintInfo) return;
+        
+                        const lens = hintInfo.persistent_lenses.find(l => l.id === lensId);
+                        if (!lens) return;
+        
                         const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === state.activeFileUri?.toString());
-
                         if (editor) {
-                            const range = new vscode.Range(line - 1, 0, line - 1, 0);
+                            const range = new vscode.Range(lens.line - 1, 0, lens.line - 1, 0);
                             editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
                             editor.selection = new vscode.Selection(range.start, range.end);
                         }

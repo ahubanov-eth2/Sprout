@@ -655,11 +655,11 @@
                     
                     if (target) {
                         event.preventDefault();
-                        const line = parseInt(target.dataset.line, 10);
+                        const lensId = target.dataset.line;
                         
                         vscode.postMessage({
                             command: 'scrollToLine',
-                            line: line
+                            line: lensId
                         });
                     }
                 });
