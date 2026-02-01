@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { TaskProvider } from './taskProvider.js'
+import { Section, TaskProvider } from './taskProvider.js'
 import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 
 import { registerGoToItemByIndexCommand } from './commands/goToItemByIndex.js';
@@ -30,6 +30,7 @@ const scheme = 'sprouthint';
 type ChecklistState = Record<string, boolean>;
 
 export type ExtensionState = {
+  currentItem? : Section;
   currentPanel?: vscode.WebviewPanel;
   activeFileUri?: vscode.Uri;
   tempFileCopyUri?: vscode.Uri;
@@ -137,7 +138,7 @@ export function activate(context: vscode.ExtensionContext) {
   const showHintPopupDisposable = registerShowHintPopupCommand(leftProvider, () => state.currentPanel);
   const showInlineHintFromLensDisposable = registerShowInlineHintFromLensCommand(clickableHintLines);
   const sectionSelectedDisposable = registerLineClickedCommand(
-    context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter, state,
+    context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter, state, item => state.currentItem = item,
     () => state.tempFileCopyUri, uri => state.tempFileCopyUri = uri, uri => state.activeFileUri = uri, () => state.currentPanel, panel => state.currentPanel = panel,
     updatePanelContent, revealPanel
   );
@@ -190,7 +191,7 @@ export function activate(context: vscode.ExtensionContext) {
     findPageByIndexDisposable,
     vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
     registerTempFileMirrorListener(() => state.tempFileCopyUri),
-    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context),
+    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, leftProvider, fileProvider, () => state.currentItem, () => state.currentPanel),
     hintSchema
   );
 }

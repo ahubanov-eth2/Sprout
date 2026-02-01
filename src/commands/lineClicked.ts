@@ -22,6 +22,8 @@ export function registerLineClickedCommand(
 
   state: ExtensionState,
 
+  setCurrentItem: (item: Section) => void,
+
   getTempFileCopyUri: () => vscode.Uri | undefined,
   setTempFileCopyUri: (uri: vscode.Uri) => void,
 
@@ -48,7 +50,6 @@ export function registerLineClickedCommand(
 
       const { siblings, currentIndex } = leftProvider.getLeafSiblings(item);
       const parent = leftProvider.findParent(leftProvider.getRoot(),item);
-
       const parentLabel = parent !== undefined ? parent.label : '';
 
       let configData: ConfigData = {};
@@ -85,6 +86,7 @@ export function registerLineClickedCommand(
 
             await vscode.window.showTextDocument(doc,vscode.ViewColumn.One);
 
+            setCurrentItem(item);
             setActiveFileUri(fileUri);
             console.log("Active File URI set to:", fileUri.toString());
             isCodeFileOpen = true;
