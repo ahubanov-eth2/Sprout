@@ -77,7 +77,12 @@ export function registerPersistentLensListener(
 
         context.workspaceState.update(
           `sprout:persistentLenses:${uri}`,
-          hintInfo.persistent_lenses
+          hintInfo.persistent_lenses.map(l => ({
+            id: l.id,
+            title: l.title,          
+            line: l.line,
+            explanation: l.explanation
+          }))
         );
 
       }

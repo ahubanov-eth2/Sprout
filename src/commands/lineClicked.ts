@@ -107,6 +107,11 @@ export function registerLineClickedCommand(
 
             if (configData.persistentLenses && codeEditor) {
 
+              // context.workspaceState.update(
+              //   `sprout:persistentLenses:${fileUri.toString()}`,
+              //   undefined
+              // );
+
               const savedLenses =
                 context.workspaceState.get<PersistentLens[]>(
                   `sprout:persistentLenses:${fileUri.toString()}`
@@ -117,7 +122,7 @@ export function registerLineClickedCommand(
               if (savedLenses && savedLenses.length > 0) {
                   persistentLenses = savedLenses.map((l, index) => ({
                       id: l.id || `lens-${index}`,
-                      title: String(l.title),
+                      title: l.title ?? configData.persistentLenses?.[index]?.title ?? `Lens ${index + 1}`,
                       line: Number(l.line),
                       explanation: String(l.explanation)
                   }));
