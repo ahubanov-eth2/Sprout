@@ -61,74 +61,6 @@ export function activate(context: vscode.ExtensionContext) {
       fileProvider.setRepoPath(projectsDirectory);
   }
 
-  function revealPanel(){
-    if (state.currentPanel) {
-        state.currentPanel.reveal(vscode.ViewColumn.One, true);
-    } else {
-        const extensionMediaUri = vscode.Uri.joinPath(context.extensionUri, 'media');
-        state.currentPanel = vscode.window.createWebviewPanel(
-          'myRightPanel',
-          'My Right Panel',
-          { viewColumn: vscode.ViewColumn.One, preserveFocus: true },
-          { enableScripts: true, enableFindWidget: true, localResourceRoots: [extensionMediaUri] }
-        );
-
-        state.currentPanel.webview.onDidReceiveMessage(
-            async message => {
-                switch (message.command) {
-                    case 'goToIndex': 
-                        vscode.commands.executeCommand('sprout.goToItemByIndex', message.label, message.index);
-                        break;
-                    case 'scrollToLine':
-                        const lensId = message.line;
-                        if (!state.activeFileUri) return;
-        
-                        const hintInfo = clickableHintLines.get(state.activeFileUri.toString());
-                        if (!hintInfo) return;
-        
-                        const lens = hintInfo.persistent_lenses.find(l => l.id === lensId);
-                        if (!lens) return;
-        
-                        const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === state.activeFileUri?.toString());
-                        if (editor) {
-                            const range = new vscode.Range(lens.line - 1, 0, lens.line - 1, 0);
-                            editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
-                            editor.selection = new vscode.Selection(range.start, range.end);
-                        }
-                        break;
-                    case 'nextItem':
-                        vscode.commands.executeCommand('sprout.goToNextItem', message.label);
-                        break; 
-                    case 'prevItem':
-                        vscode.commands.executeCommand('sprout.goToPrevItem', message.label);
-                        break;
-                    case 'showSolution':
-                        vscode.commands.executeCommand('sprout.showSolution', message.label);
-                        break;
-                    case 'getHintText':
-                        vscode.commands.executeCommand('sprout.showHintPopup', message.label);
-                        break;
-                    case 'toggleHighlight':
-                        vscode.commands.executeCommand('sprout.toggleHighlight', message.label);
-                        break;
-                    case 'saveChecklistState':
-                        context.workspaceState.update(
-                            `sprout:checklist:${message.label}`,
-                            message.state
-                        );
-                        break;  
-                }
-            },
-            undefined,
-            context.subscriptions
-        );
-
-        state.currentPanel.onDidDispose(() => {
-          state.currentPanel = undefined;
-        }, null, context.subscriptions);
-    }
-  }
-
   const findPageByIndexDisposable = registerGoToItemByIndexCommand(leftProvider);
   const toggleHighlightDisposable = registerToggleHighlightCommand(leftProvider, () => state.tempFileCopyUri);
   const nextItemDisposable = registerGoToNextItemCommand(leftProvider);
@@ -140,7 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
   const sectionSelectedDisposable = registerLineClickedCommand(
     context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter, state, item => state.currentItem = item,
     () => state.tempFileCopyUri, uri => state.tempFileCopyUri = uri, uri => state.activeFileUri = uri, () => state.currentPanel, panel => state.currentPanel = panel,
-    updatePanelContent, revealPanel
+    updatePanelContent
   );
 
   const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, {
@@ -231,4 +163,3 @@ export function decorateDiffEditor(
 
   editor.setDecorations(diffHintDecoration, decorations);
 }
-

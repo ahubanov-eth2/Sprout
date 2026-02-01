@@ -9,6 +9,7 @@ import { ConfigData } from '../types/config.js';
 import { TaskProvider } from '../taskProvider.js';
 import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
 import { PersistentLens } from '../types/lens.js';
+import { createWebviewPanel, registerWebviewMessageHandlers } from '../content_utils/panel_utils.js';
 
 export function registerLineClickedCommand(
   context: vscode.ExtensionContext,
@@ -41,9 +42,8 @@ export function registerLineClickedCommand(
     parentLabel: string,
     fileProvider: FileTreeDataProvider,
     clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>
-  ) => void,
+  ) => void
 
-  revealPanel: () => void
 ): vscode.Disposable {
 
   return vscode.commands.registerCommand('sprout.lineClicked', async (item: Section) => {
@@ -179,85 +179,26 @@ export function registerLineClickedCommand(
         isCodeFileOpen
       );
 
+      const currentPanel = getCurrentPanel();
       if (isCodeFileOpen) {
 
-        const currentPanel = getCurrentPanel();
-        if (currentPanel) { currentPanel.dispose(); }
-
-        console.log("disposed of current panel")
-
-        const panel =
-          vscode.window.createWebviewPanel(
-            'myRightPanel',
-            'My Right Panel',
-            {
-              viewColumn: vscode.ViewColumn.Two,
-              preserveFocus: true
-            },
-            {
-              enableScripts: true,
-              enableFindWidget: true
-            }
-          );
-
+        if (currentPanel) { 
+          currentPanel.dispose(); 
+        }
+        
+        const panel = createWebviewPanel(context, vscode.ViewColumn.Two);
         setCurrentPanel(panel);
+        registerWebviewMessageHandlers(context, state, clickableHintLines);
 
-        panel.webview.onDidReceiveMessage(
-          async message => {
-            switch (message.command) {
-              case 'goToIndex': 
-                vscode.commands.executeCommand('sprout.goToItemByIndex', message.label, message.index);
-                break;
-              case 'nextItem':
-                vscode.commands.executeCommand('sprout.goToNextItem',message.label);
-                break;
-              case 'scrollToLine':
-                const lensId = message.line;
-                if (!state.activeFileUri) return;
+      } else if (currentPanel) {
 
-                const hintInfo = clickableHintLines.get(state.activeFileUri.toString());
-                if (!hintInfo) return;
-
-                const lens = hintInfo.persistent_lenses.find(l => l.id === lensId);
-                if (!lens) return;
-
-                const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === state.activeFileUri?.toString());
-                if (editor) {
-                    const range = new vscode.Range(lens.line - 1, 0, lens.line - 1, 0);
-                    editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
-                    editor.selection = new vscode.Selection(range.start, range.end);
-                }
-                break;
-              case 'prevItem':
-                vscode.commands.executeCommand('sprout.goToPrevItem',message.label);
-                break;
-              case 'showSolution':
-                vscode.commands.executeCommand('sprout.showSolution',message.label);
-                break;
-              case 'getHintText':
-                vscode.commands.executeCommand('sprout.showHintPopup',message.label);
-                break;
-              case 'toggleHighlight':
-                vscode.commands.executeCommand('sprout.toggleHighlight',message.label);
-                break;
-              case 'saveChecklistState':
-                context.workspaceState.update(
-                    `sprout:checklist:${message.label}`,
-                    message.state
-                );
-                break;  
-            }
-          },
-          undefined,
-          context.subscriptions
-        );
-
-        panel.onDidDispose(() => {
-          setCurrentPanel(undefined);
-        }, null, context.subscriptions);
+        currentPanel.reveal(vscode.ViewColumn.One, true);
 
       } else {
-        revealPanel();
+        const panel = createWebviewPanel(context, vscode.ViewColumn.One, true);
+        state.currentPanel = panel;
+
+        registerWebviewMessageHandlers(context, state, clickableHintLines);
       }
 
       const panel = getCurrentPanel();
