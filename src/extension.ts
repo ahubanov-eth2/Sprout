@@ -2,7 +2,9 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { Section, TaskProvider } from './taskProvider.js'
+import { PersistentLens, ExtensionState } from './types/types.js';
+
+import { TaskProvider } from './taskProvider.js'
 import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 
 import { registerGoToItemByIndexCommand } from './commands/goToItemByIndex.js';
@@ -14,8 +16,8 @@ import { registerShowInlineHintFromLensCommand } from './commands/showInlineHint
 import { registerToggleHighlightCommand } from './commands/toggleHighlight.js';
 import { registerShowSolutionCommand } from './commands/showSolution.js';
 import { registerLineClickedCommand } from './commands/lineClicked.js';
+
 import { inlineHintContentProvider } from './hints/inlineHintUtils.js';
-import { PersistentLens } from './types/lens.js';
 import { getWorkspaceRoot } from './utils/workspace_utils.js';
 import { updatePanelContent } from './content_utils/panel_utils.js';
 
@@ -25,21 +27,8 @@ import { registerPersistentLensListener } from './listeners/persistentLensListen
 const codeLensChangeEmitter = new vscode.EventEmitter<void>();
 const hintDecorationType = vscode.window.createTextEditorDecorationType({backgroundColor: "#0078d4a0"});
 const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
+const state: ExtensionState = { clickableHintLines: new Map() };
 const scheme = 'sprouthint';
-
-type ChecklistState = Record<string, boolean>;
-
-export type ExtensionState = {
-  currentItem? : Section;
-  currentPanel?: vscode.WebviewPanel;
-  activeFileUri?: vscode.Uri;
-  tempFileCopyUri?: vscode.Uri;
-  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>;
-};
-
-const state: ExtensionState = {
-  clickableHintLines: new Map()
-};
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -51,12 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
   const fileProvider = new FileTreeDataProvider();
   vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
 
-  const projectsDirectory = path.join(
-    getWorkspaceRoot(),
-    'data',
-    'project-repository'
-  );
-
+  const projectsDirectory = path.join( getWorkspaceRoot(), 'data', 'project-repository' );
   if (fs.existsSync(projectsDirectory)) {
       fileProvider.setRepoPath(projectsDirectory);
   }
@@ -70,8 +54,13 @@ export function activate(context: vscode.ExtensionContext) {
   const showHintPopupDisposable = registerShowHintPopupCommand(leftProvider, () => state.currentPanel);
   const showInlineHintFromLensDisposable = registerShowInlineHintFromLensCommand(clickableHintLines);
   const sectionSelectedDisposable = registerLineClickedCommand(
-    context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter, state, item => state.currentItem = item,
-    () => state.tempFileCopyUri, uri => state.tempFileCopyUri = uri, uri => state.activeFileUri = uri, () => state.currentPanel, panel => state.currentPanel = panel,
+    context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter, state, 
+    item => state.currentItem = item,
+    () => state.tempFileCopyUri, 
+    uri => state.tempFileCopyUri = uri, 
+    uri => state.activeFileUri = uri, 
+    () => state.currentPanel, 
+    panel => state.currentPanel = panel,
     updatePanelContent
   );
 
@@ -129,37 +118,3 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {}
-
-function makeHover(explanation: string, uri: vscode.Uri, line: number) {
-  const md = new vscode.MarkdownString(
-    `**Why make this change?**\n\n` +
-    `${explanation}`
-  );
-
-  md.isTrusted = true;
-  return md;
-}
-
-const diffHintDecoration = vscode.window.createTextEditorDecorationType({
-  before: {
-    contentText: '💡',
-    margin: '0 0 0 0rem'
-  },
-  rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
-});
-
-export function decorateDiffEditor(
-  editor: vscode.TextEditor,
-  hints: { line: number; explanation: string }[]
-) {
-  const decorations: vscode.DecorationOptions[] = hints.map(hint => {
-    const line = editor.document.lineAt(hint.line);
-
-    return {
-      range: new vscode.Range(hint.line, 0, hint.line, line.text.length),
-      hoverMessage: makeHover(hint.explanation, editor.document.uri, hint.line)
-    };
-  });
-
-  editor.setDecorations(diffHintDecoration, decorations);
-}

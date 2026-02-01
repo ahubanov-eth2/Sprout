@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PersistentLens } from '../types/lens.js';
+import { PersistentLens } from '../types/types.js';
 import { updatePanelContent } from '../content_utils/panel_utils.js';
 import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
 import { TaskProvider } from '../taskProvider.js'

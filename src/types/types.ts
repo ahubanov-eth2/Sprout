@@ -1,8 +1,24 @@
-import { PersistentLens } from './lens';
+import * as vscode from 'vscode';
+import { Section } from "../taskProvider";
+
+export type PersistentLens = {
+    id: string,
+    title: string,
+    line: number;
+    explanation: string; 
+};
 
 export type ChecklistItem = {
   id: string;
   text: string;
+};
+
+export type ExtensionState = {
+  currentItem? : Section;
+  currentPanel?: vscode.WebviewPanel;
+  activeFileUri?: vscode.Uri;
+  tempFileCopyUri?: vscode.Uri;
+  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>;
 };
 
 export interface ConfigData {

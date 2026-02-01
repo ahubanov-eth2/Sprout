@@ -6,8 +6,8 @@ import { exec } from 'child_process';
 
 import { TaskProvider } from '../taskProvider.js';
 import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
-import { ConfigData } from '../types/config.js';
-import { decorateDiffEditor } from '../extension.js';
+import { ConfigData } from '../types/types.js';
+import { decorateDiffEditor } from '../content_utils/solution_diff_utils.js';
 
 export function registerShowSolutionCommand(
   leftProvider: TaskProvider,

@@ -3,12 +3,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-import { ExtensionState } from '../extension.js'
 import { Section } from '../taskProvider.js';
-import { ConfigData } from '../types/config.js';
+import { ConfigData } from '../types/types.js';
 import { TaskProvider } from '../taskProvider.js';
 import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
-import { PersistentLens } from '../types/lens.js';
+import { PersistentLens, ExtensionState } from '../types/types.js';
 import { createWebviewPanel, registerWebviewMessageHandlers } from '../content_utils/panel_utils.js';
 
 export function registerLineClickedCommand(

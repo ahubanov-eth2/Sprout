@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PersistentLens } from '../types/lens.js';
+import { PersistentLens } from '../types/types.js';
 import { showInlineHint } from '../hints/inlineHintUtils.js';
 
 export function registerShowInlineHintFromLensCommand(
