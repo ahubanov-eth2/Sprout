@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { ExtensionState } from '../../types/types.js';
 import { TaskProvider, Section } from '../../taskProvider.js';
 import { FileTreeDataProvider } from '../../fileTreeDataProvider.js';
 
@@ -20,7 +21,8 @@ export function registerCommands(
   views: { 
     contentProvider: TaskProvider, 
     contentTreeViewDisposable: vscode.TreeView<Section | vscode.TreeItem>, 
-    codeFileProvider: FileTreeDataProvider }
+    codeFileProvider: FileTreeDataProvider },
+  state: ExtensionState
 ) {
 
   const contentProvider = views.contentProvider;
@@ -38,14 +40,14 @@ export function registerCommands(
     registerOpenFileCommand(),
 
     //
-    registerShowInlineHintFromLensCommand(clickableHintLines),
+    registerShowInlineHintFromLensCommand(state.clickableHintLines),
     registerShowHintPopupCommand(contentProvider, () => state.currentPanel),
     registerShowSolutionCommand(contentProvider, codeFileProvider, () => state.tempFileCopyUri, () => state.activeFileUri),
     registerToggleHighlightCommand(contentProvider, () => state.tempFileCopyUri),
 
     //
     registerLineClickedCommand(
-      context, contentProvider, codeFileProvider, contentTreeViewDisposable, clickableHintLines, codeLensChangeEmitter, state, updatePanelContent
+      context, contentProvider, codeFileProvider, contentTreeViewDisposable, state, updatePanelContent
     )
   );
 }

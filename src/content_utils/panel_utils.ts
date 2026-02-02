@@ -28,13 +28,13 @@ export function createWebviewPanel(
 
 export function updatePanelContent(
   context: vscode.ExtensionContext,
+  state: ExtensionState,
   panel: vscode.WebviewPanel, 
   item: Section, 
   siblings: Section[], 
   currentIndex: number,
   parentLabel: string,
-  fileProvider: FileTreeDataProvider,
-  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>
+  fileProvider: FileTreeDataProvider
 ) {
 
   const checklistState =
@@ -44,13 +44,12 @@ export function updatePanelContent(
   );
 
   panel.title = `${item.label}`;
-  panel.webview.html = getWebviewContent(item, siblings, currentIndex, parentLabel, panel.webview, fileProvider, clickableHintLines, checklistState); 
+  panel.webview.html = getWebviewContent(item, siblings, currentIndex, parentLabel, panel.webview, fileProvider, state, checklistState); 
 }
 
 export function registerWebviewMessageHandlers(
   context: vscode.ExtensionContext,
-  state: ExtensionState,
-  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>
+  state: ExtensionState
 ) {
     state.currentPanel?.webview.onDidReceiveMessage(
         async message => {
@@ -65,7 +64,7 @@ export function registerWebviewMessageHandlers(
               const lensId = message.line;
               if (!state.activeFileUri) return;
 
-              const hintInfo = clickableHintLines.get(state.activeFileUri.toString());
+              const hintInfo = state.clickableHintLines.get(state.activeFileUri.toString());
               if (!hintInfo) return;
 
               const lens = hintInfo.persistent_lenses.find(l => l.id === lensId);
@@ -114,7 +113,7 @@ function getWebviewContent(
   parentLabel: string,
   webview: vscode.Webview,
   fileProvider: FileTreeDataProvider,
-  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>,
+  state: ExtensionState,
   checklistState: Record<string, boolean>
 ): string 
 {
@@ -212,7 +211,7 @@ function getWebviewContent(
       const fileUri = vscode.Uri.file(absolutePath);
       const mapKey = fileUri.toString(); 
 
-      const hintInfo = clickableHintLines.get(mapKey);
+      const hintInfo = state.clickableHintLines.get(mapKey);
 
       if (hintInfo && hintInfo.persistent_lenses) {
           pointsOfInterestHtml = '<div><strong>Points of interest:</strong><ul>';

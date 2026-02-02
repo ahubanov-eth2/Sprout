@@ -19,6 +19,7 @@ export type ExtensionState = {
   activeFileUri?: vscode.Uri;
   tempFileCopyUri?: vscode.Uri;
   clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>;
+  codeLensChangeEmitter: vscode.EventEmitter<void>;
 };
 
 export interface ConfigData {

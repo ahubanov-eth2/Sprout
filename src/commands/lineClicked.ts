@@ -17,20 +17,17 @@ export function registerLineClickedCommand(
   fileProvider: FileTreeDataProvider,
   treeView: vscode.TreeView<Section | vscode.TreeItem> | undefined,
 
-  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>,
-  codeLensChangeEmitter: vscode.EventEmitter<void>,
-
   state: ExtensionState,
 
   updatePanelContent: (
     context: vscode.ExtensionContext,
+    state: ExtensionState,
     panel: vscode.WebviewPanel,
     item: Section,
     siblings: Section[],
     currentIndex: number,
     parentLabel: string,
-    fileProvider: FileTreeDataProvider,
-    clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>
+    fileProvider: FileTreeDataProvider
   ) => void
 
 ): vscode.Disposable {
@@ -132,12 +129,12 @@ export function registerLineClickedCommand(
                 persistent_lenses: persistentLenses
               };
 
-              clickableHintLines.set(
+              state.clickableHintLines.set(
                 codeEditor.document.uri.toString(),
                 hintInfo
               );
 
-              codeLensChangeEmitter.fire();
+              state.codeLensChangeEmitter.fire();
             }
 
           } catch (error) {
@@ -177,7 +174,7 @@ export function registerLineClickedCommand(
         
         const panel = createWebviewPanel(context, vscode.ViewColumn.Two);
         state.currentPanel = panel;
-        registerWebviewMessageHandlers(context, state, clickableHintLines);
+        registerWebviewMessageHandlers(context, state);
 
       } else if (currentPanel) {
 
@@ -187,20 +184,20 @@ export function registerLineClickedCommand(
         const panel = createWebviewPanel(context, vscode.ViewColumn.One, true);
         state.currentPanel = panel;
 
-        registerWebviewMessageHandlers(context, state, clickableHintLines);
+        registerWebviewMessageHandlers(context, state);
       }
 
       const panel = state.currentPanel;
       if (panel) {
         updatePanelContent(
           context,
+          state,
           panel,
           item,
           siblings,
           currentIndex,
           parentLabel,
-          fileProvider,
-          clickableHintLines
+          fileProvider
         );
       }
 

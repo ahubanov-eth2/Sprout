@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PersistentLens } from '../types/types.js';
+import { ExtensionState, PersistentLens } from '../types/types.js';
 import { updatePanelContent } from '../content_utils/panel_utils.js';
 import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
 import { TaskProvider } from '../taskProvider.js'
@@ -17,12 +17,10 @@ export function registerPersistentLensListener(
   clickableHintLines: Map<string, HintInfo>,
   codeLensChangeEmitter: vscode.EventEmitter<void>,
   context: vscode.ExtensionContext,
+  state: ExtensionState,
 
   leftProvider: TaskProvider,
-  fileProvider: FileTreeDataProvider,
-
-  getCurrentItem: () => Section | undefined,
-  getCurrentPanel: () => vscode.WebviewPanel | undefined,
+  fileProvider: FileTreeDataProvider
 
 ): vscode.Disposable {
   return vscode.workspace.onDidChangeTextDocument(event => {
@@ -44,21 +42,21 @@ export function registerPersistentLensListener(
 
       const afterCount = hintInfo.persistent_lenses.length;
       if (beforeCount != afterCount) {
-        const item = getCurrentItem();
+        const item = state.currentItem;
         const { siblings, currentIndex } = leftProvider.getLeafSiblings(item as Section);
         const parent = leftProvider.findParent(leftProvider.getRoot(),item as Section);
         const parentLabel = parent !== undefined ? parent.label : '';
-        const panel = getCurrentPanel();
+        const panel = state.currentPanel;
         if (panel) {
           updatePanelContent(
             context,
+            state,
             panel,
             item as Section,
             siblings,
             currentIndex,
             parentLabel,
-            fileProvider,
-            clickableHintLines
+            fileProvider
           );
         }
       }

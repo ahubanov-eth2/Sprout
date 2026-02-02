@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import { registerCommands } from './commands/utils/commandRegistration.js';
 import { registerEventListeners } from './listeners/utils/listenerRegistration.js';
 
-import { PersistentLens, ExtensionState } from './types/types.js';
+import { ExtensionState } from './types/types.js';
 
 import { TaskProvider } from './taskProvider.js'
 import { FileTreeDataProvider } from './fileTreeDataProvider.js';
@@ -13,18 +13,16 @@ import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 import { inlineHintContentProvider } from './hints/inlineHintUtils.js';
 import { getWorkspaceRoot } from './utils/workspace_utils.js';
 
-const codeLensChangeEmitter = new vscode.EventEmitter<void>();
-const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
-const state: ExtensionState = { clickableHintLines: new Map() };
 const scheme = 'sprouthint';
 
 //
 export function activate(context: vscode.ExtensionContext) {
 
+  const state = createState();
   const views = registerViews(context);
-  registerCodeLensProviderDisposable(context, clickableHintLines);
-  registerCommands(context, views);
-  registerEventListeners(context, views);
+  registerCodeLensProviderDisposable(context, state);
+  registerCommands(context, views, state);
+  registerEventListeners(context, views, state);
 
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
@@ -58,12 +56,12 @@ function registerViews(context: vscode.ExtensionContext) {
 
 function registerCodeLensProviderDisposable(
   context: vscode.ExtensionContext,
-  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>
+  state: ExtensionState
 ) {
 
   const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, {
     provideCodeLenses(document) {
-      const hintInfo = clickableHintLines.get(document.uri.toString());
+      const hintInfo = state.clickableHintLines.get(document.uri.toString());
       const lenses: vscode.CodeLens[] = [];
 
       if (!hintInfo) return lenses;
@@ -86,9 +84,13 @@ function registerCodeLensProviderDisposable(
 
       return lenses;
     },
-    onDidChangeCodeLenses: codeLensChangeEmitter.event
+    onDidChangeCodeLenses: state.codeLensChangeEmitter.event
   });
 
   context.subscriptions.push(codeLensProviderDisposable);
 
+}
+
+function createState() {
+  return { clickableHintLines: new Map(), codeLensChangeEmitter: new vscode.EventEmitter<void>() };
 }

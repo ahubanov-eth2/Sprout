@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { ExtensionState } from '../../types/types.js';
 import { TaskProvider, Section } from '../../taskProvider.js';
 import { FileTreeDataProvider } from '../../fileTreeDataProvider.js';
 
@@ -11,15 +12,25 @@ export function registerEventListeners(
   views: { 
     contentProvider: TaskProvider, 
     contentTreeViewDisposable: vscode.TreeView<Section | vscode.TreeItem>, 
-    codeFileProvider: FileTreeDataProvider }
+    codeFileProvider: FileTreeDataProvider },
+  state: ExtensionState
 ) {
 
   const contentProvider = views.contentProvider;
   const codeFileProvider = views.codeFileProvider;
 
+  const clickableHintLines = state.clickableHintLines;
+  const codeLensChangeEmitter = state.codeLensChangeEmitter;
+
   context.subscriptions.push(
     registerTempFileMirrorListener(() => state.tempFileCopyUri),
-    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, contentProvider, codeFileProvider, () => state.currentItem, () => state.currentPanel)
+    registerPersistentLensListener(
+        clickableHintLines, 
+        codeLensChangeEmitter, 
+        context,
+        state, 
+        contentProvider, 
+        codeFileProvider)
   );
 
 }
