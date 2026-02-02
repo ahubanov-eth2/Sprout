@@ -2,24 +2,15 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
+import { registerCommands } from './commands/utils/commandRegistration.js';
+
 import { PersistentLens, ExtensionState } from './types/types.js';
 
 import { TaskProvider, Section } from './taskProvider.js'
 import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 
-import { registerGoToItemByIndexCommand } from './commands/goToItemByIndex.js';
-import { registerGoToNextItemCommand } from './commands/goToNextItem.js';
-import { registerGoToPrevItemCommand } from './commands/goToPreviousItem.js';
-import { registerOpenFileCommand } from './commands/openFile.js';
-import { registerShowHintPopupCommand } from './commands/showHintPopup.js';
-import { registerShowInlineHintFromLensCommand } from './commands/showInlineHintFromLens.js';
-import { registerToggleHighlightCommand } from './commands/toggleHighlight.js';
-import { registerShowSolutionCommand } from './commands/showSolution.js';
-import { registerLineClickedCommand } from './commands/lineClicked.js';
-
 import { inlineHintContentProvider } from './hints/inlineHintUtils.js';
 import { getWorkspaceRoot } from './utils/workspace_utils.js';
-import { updatePanelContent } from './content_utils/panel_utils.js';
 
 import { registerTempFileMirrorListener } from './listeners/tempFileMirrorListener.js';
 import { registerPersistentLensListener } from './listeners/persistentLensListener.js';
@@ -34,11 +25,10 @@ export function activate(context: vscode.ExtensionContext) {
   const views = registerViews(context);
   registerCodeLensProviderDisposable(context, clickableHintLines);
   registerCommands(context, views);
+  registerEventListeners(context, views);
 
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
-    registerTempFileMirrorListener(() => state.tempFileCopyUri),
-    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, contentProvider, codeFileProvider, () => state.currentItem, () => state.currentPanel),
   );
 }
 
@@ -104,7 +94,7 @@ function registerCodeLensProviderDisposable(
 
 }
 
-function registerCommands(
+function registerEventListeners(
   context: vscode.ExtensionContext,
   views: { 
     contentProvider: TaskProvider, 
@@ -113,28 +103,11 @@ function registerCommands(
 ) {
 
   const contentProvider = views.contentProvider;
-  const contentTreeViewDisposable = views.contentTreeViewDisposable;
   const codeFileProvider = views.codeFileProvider;
 
   context.subscriptions.push(
-
-    //
-    registerGoToNextItemCommand(contentProvider),
-    registerGoToPrevItemCommand(contentProvider),
-    registerGoToItemByIndexCommand(contentProvider),
-
-    //
-    registerOpenFileCommand(),
-
-    //
-    registerShowInlineHintFromLensCommand(clickableHintLines),
-    registerShowHintPopupCommand(contentProvider, () => state.currentPanel),
-    registerShowSolutionCommand(contentProvider, codeFileProvider, () => state.tempFileCopyUri, () => state.activeFileUri),
-    registerToggleHighlightCommand(contentProvider, () => state.tempFileCopyUri),
-
-    //
-    registerLineClickedCommand(
-      context, contentProvider, codeFileProvider, contentTreeViewDisposable, clickableHintLines, codeLensChangeEmitter, state, updatePanelContent
-    )
+    registerTempFileMirrorListener(() => state.tempFileCopyUri),
+    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, contentProvider, codeFileProvider, () => state.currentItem, () => state.currentPanel)
   );
+
 }
