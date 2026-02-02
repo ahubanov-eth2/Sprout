@@ -3,23 +3,22 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import { registerCommands } from './commands/utils/commandRegistration.js';
+import { registerEventListeners } from './listeners/utils/listenerRegistration.js';
 
 import { PersistentLens, ExtensionState } from './types/types.js';
 
-import { TaskProvider, Section } from './taskProvider.js'
+import { TaskProvider } from './taskProvider.js'
 import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 
 import { inlineHintContentProvider } from './hints/inlineHintUtils.js';
 import { getWorkspaceRoot } from './utils/workspace_utils.js';
-
-import { registerTempFileMirrorListener } from './listeners/tempFileMirrorListener.js';
-import { registerPersistentLensListener } from './listeners/persistentLensListener.js';
 
 const codeLensChangeEmitter = new vscode.EventEmitter<void>();
 const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
 const state: ExtensionState = { clickableHintLines: new Map() };
 const scheme = 'sprouthint';
 
+//
 export function activate(context: vscode.ExtensionContext) {
 
   const views = registerViews(context);
@@ -91,23 +90,5 @@ function registerCodeLensProviderDisposable(
   });
 
   context.subscriptions.push(codeLensProviderDisposable);
-
-}
-
-function registerEventListeners(
-  context: vscode.ExtensionContext,
-  views: { 
-    contentProvider: TaskProvider, 
-    contentTreeViewDisposable: vscode.TreeView<Section | vscode.TreeItem>, 
-    codeFileProvider: FileTreeDataProvider }
-) {
-
-  const contentProvider = views.contentProvider;
-  const codeFileProvider = views.codeFileProvider;
-
-  context.subscriptions.push(
-    registerTempFileMirrorListener(() => state.tempFileCopyUri),
-    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, contentProvider, codeFileProvider, () => state.currentItem, () => state.currentPanel)
-  );
 
 }
