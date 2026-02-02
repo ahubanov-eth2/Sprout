@@ -22,6 +22,14 @@ export function activate(context: vscode.ExtensionContext) {
   registerHintSystemProviders(context, state);
   registerCommands(context, views, state);
   registerEventListeners(context, views, state);
+
+  const hintSchema = vscode.workspace.registerTextDocumentContentProvider('sprout-hint', {
+      provideTextDocumentContent(uri) {
+          return decodeURIComponent(uri.query);
+      }
+  });
+
+  context.subscriptions.push(hintSchema);
 }
 
 //
