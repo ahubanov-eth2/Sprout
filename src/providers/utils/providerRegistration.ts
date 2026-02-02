@@ -7,6 +7,7 @@ import { getWorkspaceRoot } from '../../utils/workspace_utils.js';
 
 import { TaskProvider } from '../taskProvider.js';
 import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
+import { HINT_SCHEME, inlineHintContentProvider } from '../inlineHintContentProvider.js';
 
 export function registerViews(context: vscode.ExtensionContext) {
 
@@ -31,7 +32,8 @@ export function registerViews(context: vscode.ExtensionContext) {
   return { contentProvider, contentTreeViewDisposable, codeFileProvider };
 }
 
-export function registerCodeLensProviderDisposable(
+//
+function registerCodeLensProviderDisposable(
   context: vscode.ExtensionContext,
   state: ExtensionState
 ) {
@@ -66,4 +68,21 @@ export function registerCodeLensProviderDisposable(
 
   context.subscriptions.push(codeLensProviderDisposable);
 
+}
+
+//
+function registerInlineHintProviderDisposable(
+  context: vscode.ExtensionContext
+) {
+  const hintContentProviderDisposable = vscode.workspace.registerTextDocumentContentProvider(HINT_SCHEME, inlineHintContentProvider);
+
+  context.subscriptions.push(hintContentProviderDisposable);
+}
+
+export function registerHintSystemProviders(
+    context: vscode.ExtensionContext,
+    state: ExtensionState
+) {
+    registerCodeLensProviderDisposable(context, state);
+    registerInlineHintProviderDisposable(context);
 }

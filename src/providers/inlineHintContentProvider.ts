@@ -1,23 +1,7 @@
 import * as vscode from 'vscode';
 
-const hintTexts = new Map<string, string>();
-
-export function showInlineHint(editor: vscode.TextEditor, line: number, hintText: string) {
-  const startPos = new vscode.Position(line, 0);
-
-  const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const virtualDocUri = vscode.Uri.parse(`sprouthint:${uniqueId}.md`);
-
-  hintTexts.set(virtualDocUri.path, hintText);
-
-  vscode.commands.executeCommand(
-    'editor.action.peekLocations',
-    editor.document.uri,
-    startPos,
-    [new vscode.Location(virtualDocUri, new vscode.Position(0, 0))],
-    'peek'
-  );
-}
+export const HINT_SCHEME = 'sprouthint';
+export const hintTexts = new Map<string, string>();
 
 export const inlineHintContentProvider: vscode.TextDocumentContentProvider =
   new (class implements vscode.TextDocumentContentProvider {
