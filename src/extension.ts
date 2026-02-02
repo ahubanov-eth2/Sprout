@@ -34,12 +34,6 @@ export function activate(context: vscode.ExtensionContext) {
   const { contentProvider, contentTreeDisposable, codeFileProvider } = registerViews(context);
   registerCodeLensProviderDisposable(context, clickableHintLines);
 
-  const hintSchema = vscode.workspace.registerTextDocumentContentProvider('sprout-hint', {
-      provideTextDocumentContent(uri) {
-          return decodeURIComponent(uri.query);
-      }
-  });
-
   context.subscriptions.push(
     registerGoToNextItemCommand(contentProvider),
     registerGoToPrevItemCommand(contentProvider),
@@ -55,7 +49,6 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
     registerTempFileMirrorListener(() => state.tempFileCopyUri),
     registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, contentProvider, codeFileProvider, () => state.currentItem, () => state.currentPanel),
-    hintSchema
   );
 }
 
