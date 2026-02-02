@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Section } from "../taskProvider";
+import { Section } from "../providers/taskProvider";
 
 export type PersistentLens = {
     id: string,

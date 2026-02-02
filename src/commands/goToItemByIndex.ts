@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TaskProvider, Section } from '../taskProvider.js';
+import { TaskProvider, Section } from '../providers/taskProvider.js';
 
 export function registerGoToItemByIndexCommand(
   leftProvider: TaskProvider

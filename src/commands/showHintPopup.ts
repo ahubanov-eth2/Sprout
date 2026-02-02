@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { ConfigData } from '../types/types.js';
-import { TaskProvider } from '../taskProvider.js';
+import { TaskProvider } from '../providers/taskProvider.js';
 
 export function registerShowHintPopupCommand(
   leftProvider: TaskProvider,

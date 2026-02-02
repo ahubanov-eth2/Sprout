@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 
 import { ExtensionState } from '../../types/types.js';
-import { TaskProvider, Section } from '../../taskProvider.js';
-import { FileTreeDataProvider } from '../../fileTreeDataProvider.js';
+import { TaskProvider, Section } from '../../providers/taskProvider.js';
+import { FileTreeDataProvider } from '../../providers/fileTreeDataProvider.js';
 
 import { registerGoToItemByIndexCommand }        from '../goToItemByIndex.js';
 import { registerGoToNextItemCommand }           from '../goToNextItem.js';

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { TaskProvider } from '../taskProvider.js';
+import { TaskProvider } from '../providers/taskProvider.js';
 import { ConfigData } from '../types/types.js';
 
 export function registerToggleHighlightCommand(

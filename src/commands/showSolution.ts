@@ -4,8 +4,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { exec } from 'child_process';
 
-import { TaskProvider } from '../taskProvider.js';
-import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
+import { TaskProvider } from '../providers/taskProvider.js';
+import { FileTreeDataProvider } from '../providers/fileTreeDataProvider.js';
 import { ConfigData } from '../types/types.js';
 import { decorateDiffEditor } from '../content_utils/solution_diff_utils.js';
 

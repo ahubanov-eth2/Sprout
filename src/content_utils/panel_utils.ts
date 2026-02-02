@@ -3,9 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { marked } from 'marked';
 
-import { Section } from '../taskProvider.js';
-import { PersistentLens, ExtensionState } from '../types/types.js';
-import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
+import { Section } from '../providers/taskProvider.js';
+import { ExtensionState } from '../types/types.js';
+import { FileTreeDataProvider } from '../providers/fileTreeDataProvider.js';
 import { ChecklistItem, ConfigData } from '../types/types.js';
 
 export function createWebviewPanel(

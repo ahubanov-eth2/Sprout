@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { ExtensionState, PersistentLens } from '../types/types.js';
 import { updatePanelContent } from '../content_utils/panel_utils.js';
-import { FileTreeDataProvider } from '../fileTreeDataProvider.js';
-import { TaskProvider } from '../taskProvider.js'
-import { Section } from '../taskProvider.js';
+import { FileTreeDataProvider } from '../providers/fileTreeDataProvider.js';
+import { TaskProvider } from '../providers/taskProvider.js'
+import { Section } from '../providers/taskProvider.js';
 
 type HintInfo = {
   lines: [number, number][];
