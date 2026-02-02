@@ -25,25 +25,69 @@ import { registerTempFileMirrorListener } from './listeners/tempFileMirrorListen
 import { registerPersistentLensListener } from './listeners/persistentLensListener.js';
 
 const codeLensChangeEmitter = new vscode.EventEmitter<void>();
-const hintDecorationType = vscode.window.createTextEditorDecorationType({backgroundColor: "#0078d4a0"});
 const clickableHintLines = new Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>();
 const state: ExtensionState = { clickableHintLines: new Map() };
 const scheme = 'sprouthint';
 
 export function activate(context: vscode.ExtensionContext) {
 
-  const leftProvider = new TaskProvider(context);
-  const treeView = vscode.window.createTreeView('leftView', {
-    treeDataProvider: leftProvider
+  const { contentProvider, contentTreeDisposable, codeFileProvider } = registerViews(context);
+  registerCodeLensProviderDisposable(context, clickableHintLines);
+
+  const hintSchema = vscode.workspace.registerTextDocumentContentProvider('sprout-hint', {
+      provideTextDocumentContent(uri) {
+          return decodeURIComponent(uri.query);
+      }
   });
 
-  const fileProvider = new FileTreeDataProvider();
-  vscode.window.registerTreeDataProvider('clonedReposView', fileProvider);
+  context.subscriptions.push(
+    registerGoToNextItemCommand(contentProvider),
+    registerGoToPrevItemCommand(contentProvider),
+    registerOpenFileCommand(),
+    registerShowSolutionCommand(contentProvider, codeFileProvider, () => state.tempFileCopyUri, () => state.activeFileUri),
+    registerShowHintPopupCommand(contentProvider, () => state.currentPanel),
+    registerShowInlineHintFromLensCommand(clickableHintLines),
+    registerToggleHighlightCommand(contentProvider, () => state.tempFileCopyUri),
+    registerLineClickedCommand(
+      context, contentProvider, codeFileProvider, contentTreeDisposable, clickableHintLines, codeLensChangeEmitter, state, updatePanelContent
+    ),
+    registerGoToItemByIndexCommand(contentProvider),
+    vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
+    registerTempFileMirrorListener(() => state.tempFileCopyUri),
+    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, contentProvider, codeFileProvider, () => state.currentItem, () => state.currentPanel),
+    hintSchema
+  );
+}
 
+export function deactivate() {}
+
+function registerViews(context: vscode.ExtensionContext) {
+
+  //
+  const contentProvider = new TaskProvider(context);
+  const contentTreeDisposable = vscode.window.createTreeView('leftView', { treeDataProvider: contentProvider });
+
+  context.subscriptions.push(contentTreeDisposable);
+
+  //
+  const codeFileProvider = new FileTreeDataProvider();
+  const fileTreeDisposable = vscode.window.registerTreeDataProvider('clonedReposView', codeFileProvider);
+
+  context.subscriptions.push(fileTreeDisposable);
+
+  //
   const projectsDirectory = path.join( getWorkspaceRoot(), 'data', 'project-repository' );
   if (fs.existsSync(projectsDirectory)) {
-      fileProvider.setRepoPath(projectsDirectory);
+      codeFileProvider.setRepoPath(projectsDirectory);
   }
+
+  return { contentProvider, contentTreeDisposable, codeFileProvider };
+}
+
+function registerCodeLensProviderDisposable(
+  context: vscode.ExtensionContext,
+  clickableHintLines: Map<string, { lines: [number, number][], hintText: string, label: string, isTemp: boolean, persistent_lenses: PersistentLens[]}>
+) {
 
   const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, {
     provideCodeLenses(document) {
@@ -73,31 +117,6 @@ export function activate(context: vscode.ExtensionContext) {
     onDidChangeCodeLenses: codeLensChangeEmitter.event
   });
 
-  const hintSchema = vscode.workspace.registerTextDocumentContentProvider('sprout-hint', {
-      provideTextDocumentContent(uri) {
-          return decodeURIComponent(uri.query);
-      }
-  });
+  context.subscriptions.push(codeLensProviderDisposable);
 
-  context.subscriptions.push(
-    registerGoToNextItemCommand(leftProvider),
-    registerGoToPrevItemCommand(leftProvider),
-    registerOpenFileCommand(),
-    registerShowSolutionCommand(leftProvider, fileProvider, () => state.tempFileCopyUri, () => state.activeFileUri),
-    registerShowHintPopupCommand(leftProvider, () => state.currentPanel),
-    hintDecorationType,
-    registerShowInlineHintFromLensCommand(clickableHintLines),
-    codeLensProviderDisposable,
-    registerToggleHighlightCommand(leftProvider, () => state.tempFileCopyUri),
-    registerLineClickedCommand(
-      context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter, state, updatePanelContent
-    ),
-    registerGoToItemByIndexCommand(leftProvider),
-    vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
-    registerTempFileMirrorListener(() => state.tempFileCopyUri),
-    registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, leftProvider, fileProvider, () => state.currentItem, () => state.currentPanel),
-    hintSchema
-  );
 }
-
-export function deactivate() {}
