@@ -2,11 +2,17 @@
   "publisher": "ahubanov",
   "name": "sprout",
   "displayName": "Sprout",
-  "description": "A programming exercise extension ",
+  "description": "A VS Code extension for solving programming tasks adapted from open-source software.",
   "version": "0.0.1",
+  "license": "MIT",
+  "icon": "logo-green.png",
   "type": "module",
   "engines": {
     "vscode": "^1.103.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ahubanov-eth2/Sprout"
   },
   "categories": [
     "Other"
