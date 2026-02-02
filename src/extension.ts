@@ -45,25 +45,6 @@ export function activate(context: vscode.ExtensionContext) {
       fileProvider.setRepoPath(projectsDirectory);
   }
 
-  const findPageByIndexDisposable = registerGoToItemByIndexCommand(leftProvider);
-  const toggleHighlightDisposable = registerToggleHighlightCommand(leftProvider, () => state.tempFileCopyUri);
-  const nextItemDisposable = registerGoToNextItemCommand(leftProvider);
-  const prevItemDisposable = registerGoToPrevItemCommand(leftProvider);
-  const showSolutionDisposable = registerShowSolutionCommand(leftProvider, fileProvider, () => state.tempFileCopyUri, () => state.activeFileUri);
-  const openFileDisposable = registerOpenFileCommand();
-  const showHintPopupDisposable = registerShowHintPopupCommand(leftProvider, () => state.currentPanel);
-  const showInlineHintFromLensDisposable = registerShowInlineHintFromLensCommand(clickableHintLines);
-  const sectionSelectedDisposable = registerLineClickedCommand(
-    context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter, state, 
-    item => state.currentItem = item,
-    () => state.tempFileCopyUri, 
-    uri => state.tempFileCopyUri = uri, 
-    uri => state.activeFileUri = uri, 
-    () => state.currentPanel, 
-    panel => state.currentPanel = panel,
-    updatePanelContent
-  );
-
   const codeLensProviderDisposable = vscode.languages.registerCodeLensProvider({ pattern: '**/*' }, {
     provideCodeLenses(document) {
       const hintInfo = clickableHintLines.get(document.uri.toString());
@@ -99,17 +80,19 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   context.subscriptions.push(
-    nextItemDisposable, 
-    prevItemDisposable, 
-    openFileDisposable, 
-    showSolutionDisposable,
-    showHintPopupDisposable, 
+    registerGoToNextItemCommand(leftProvider),
+    registerGoToPrevItemCommand(leftProvider),
+    registerOpenFileCommand(),
+    registerShowSolutionCommand(leftProvider, fileProvider, () => state.tempFileCopyUri, () => state.activeFileUri),
+    registerShowHintPopupCommand(leftProvider, () => state.currentPanel),
     hintDecorationType,
-    showInlineHintFromLensDisposable,
+    registerShowInlineHintFromLensCommand(clickableHintLines),
     codeLensProviderDisposable,
-    toggleHighlightDisposable,
-    sectionSelectedDisposable,
-    findPageByIndexDisposable,
+    registerToggleHighlightCommand(leftProvider, () => state.tempFileCopyUri),
+    registerLineClickedCommand(
+      context, leftProvider, fileProvider, treeView, clickableHintLines, codeLensChangeEmitter, state, updatePanelContent
+    ),
+    registerGoToItemByIndexCommand(leftProvider),
     vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
     registerTempFileMirrorListener(() => state.tempFileCopyUri),
     registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, leftProvider, fileProvider, () => state.currentItem, () => state.currentPanel),

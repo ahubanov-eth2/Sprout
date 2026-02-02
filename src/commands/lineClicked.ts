@@ -22,16 +22,6 @@ export function registerLineClickedCommand(
 
   state: ExtensionState,
 
-  setCurrentItem: (item: Section) => void,
-
-  getTempFileCopyUri: () => vscode.Uri | undefined,
-  setTempFileCopyUri: (uri: vscode.Uri) => void,
-
-  setActiveFileUri: (uri: vscode.Uri) => void,
-
-  getCurrentPanel: () => vscode.WebviewPanel | undefined,
-  setCurrentPanel: (panel: vscode.WebviewPanel | undefined) => void,
-
   updatePanelContent: (
     context: vscode.ExtensionContext,
     panel: vscode.WebviewPanel,
@@ -66,7 +56,7 @@ export function registerLineClickedCommand(
 
           try {
 
-            if (!getTempFileCopyUri()) {
+            if (!state.tempFileCopyUri) {
 
               const tempFileName = `temp_${Date.now()}_${path.basename(fileUri.fsPath)}`;
               const tempFilePath = path.join(os.tmpdir(),tempFileName);
@@ -78,15 +68,15 @@ export function registerLineClickedCommand(
               const tempUri = vscode.Uri.file(tempFilePath);
 
               fs.writeFileSync(tempUri.fsPath,tempFileContent);
-              setTempFileCopyUri(tempUri);
+              state.tempFileCopyUri = (tempUri);
             }
 
             const doc = await vscode.workspace.openTextDocument(fileUri);
 
             await vscode.window.showTextDocument(doc,vscode.ViewColumn.One);
 
-            setCurrentItem(item);
-            setActiveFileUri(fileUri);
+            state.currentItem = item;
+            state.activeFileUri = fileUri;
             console.log("Active File URI set to:", fileUri.toString());
             isCodeFileOpen = true;
 
@@ -178,7 +168,7 @@ export function registerLineClickedCommand(
         isCodeFileOpen
       );
 
-      const currentPanel = getCurrentPanel();
+      const currentPanel = state.currentPanel;
       if (isCodeFileOpen) {
 
         if (currentPanel) { 
@@ -186,7 +176,7 @@ export function registerLineClickedCommand(
         }
         
         const panel = createWebviewPanel(context, vscode.ViewColumn.Two);
-        setCurrentPanel(panel);
+        state.currentPanel = panel;
         registerWebviewMessageHandlers(context, state, clickableHintLines);
 
       } else if (currentPanel) {
@@ -200,7 +190,7 @@ export function registerLineClickedCommand(
         registerWebviewMessageHandlers(context, state, clickableHintLines);
       }
 
-      const panel = getCurrentPanel();
+      const panel = state.currentPanel;
       if (panel) {
         updatePanelContent(
           context,
