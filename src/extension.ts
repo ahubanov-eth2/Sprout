@@ -4,7 +4,7 @@ import * as fs from 'fs';
 
 import { PersistentLens, ExtensionState } from './types/types.js';
 
-import { TaskProvider } from './taskProvider.js'
+import { TaskProvider, Section } from './taskProvider.js'
 import { FileTreeDataProvider } from './fileTreeDataProvider.js';
 
 import { registerGoToItemByIndexCommand } from './commands/goToItemByIndex.js';
@@ -31,21 +31,11 @@ const scheme = 'sprouthint';
 
 export function activate(context: vscode.ExtensionContext) {
 
-  const { contentProvider, contentTreeDisposable, codeFileProvider } = registerViews(context);
+  const views = registerViews(context);
   registerCodeLensProviderDisposable(context, clickableHintLines);
+  registerCommands(context, views);
 
   context.subscriptions.push(
-    registerGoToNextItemCommand(contentProvider),
-    registerGoToPrevItemCommand(contentProvider),
-    registerOpenFileCommand(),
-    registerShowSolutionCommand(contentProvider, codeFileProvider, () => state.tempFileCopyUri, () => state.activeFileUri),
-    registerShowHintPopupCommand(contentProvider, () => state.currentPanel),
-    registerShowInlineHintFromLensCommand(clickableHintLines),
-    registerToggleHighlightCommand(contentProvider, () => state.tempFileCopyUri),
-    registerLineClickedCommand(
-      context, contentProvider, codeFileProvider, contentTreeDisposable, clickableHintLines, codeLensChangeEmitter, state, updatePanelContent
-    ),
-    registerGoToItemByIndexCommand(contentProvider),
     vscode.workspace.registerTextDocumentContentProvider(scheme, inlineHintContentProvider),
     registerTempFileMirrorListener(() => state.tempFileCopyUri),
     registerPersistentLensListener(clickableHintLines, codeLensChangeEmitter, context, contentProvider, codeFileProvider, () => state.currentItem, () => state.currentPanel),
@@ -58,9 +48,9 @@ function registerViews(context: vscode.ExtensionContext) {
 
   //
   const contentProvider = new TaskProvider(context);
-  const contentTreeDisposable = vscode.window.createTreeView('leftView', { treeDataProvider: contentProvider });
+  const contentTreeViewDisposable = vscode.window.createTreeView('leftView', { treeDataProvider: contentProvider });
 
-  context.subscriptions.push(contentTreeDisposable);
+  context.subscriptions.push(contentTreeViewDisposable);
 
   //
   const codeFileProvider = new FileTreeDataProvider();
@@ -74,7 +64,7 @@ function registerViews(context: vscode.ExtensionContext) {
       codeFileProvider.setRepoPath(projectsDirectory);
   }
 
-  return { contentProvider, contentTreeDisposable, codeFileProvider };
+  return { contentProvider, contentTreeViewDisposable, codeFileProvider };
 }
 
 function registerCodeLensProviderDisposable(
@@ -112,4 +102,39 @@ function registerCodeLensProviderDisposable(
 
   context.subscriptions.push(codeLensProviderDisposable);
 
+}
+
+function registerCommands(
+  context: vscode.ExtensionContext,
+  views: { 
+    contentProvider: TaskProvider, 
+    contentTreeViewDisposable: vscode.TreeView<Section | vscode.TreeItem>, 
+    codeFileProvider: FileTreeDataProvider }
+) {
+
+  const contentProvider = views.contentProvider;
+  const contentTreeViewDisposable = views.contentTreeViewDisposable;
+  const codeFileProvider = views.codeFileProvider;
+
+  context.subscriptions.push(
+
+    //
+    registerGoToNextItemCommand(contentProvider),
+    registerGoToPrevItemCommand(contentProvider),
+    registerGoToItemByIndexCommand(contentProvider),
+
+    //
+    registerOpenFileCommand(),
+
+    //
+    registerShowInlineHintFromLensCommand(clickableHintLines),
+    registerShowHintPopupCommand(contentProvider, () => state.currentPanel),
+    registerShowSolutionCommand(contentProvider, codeFileProvider, () => state.tempFileCopyUri, () => state.activeFileUri),
+    registerToggleHighlightCommand(contentProvider, () => state.tempFileCopyUri),
+
+    //
+    registerLineClickedCommand(
+      context, contentProvider, codeFileProvider, contentTreeViewDisposable, clickableHintLines, codeLensChangeEmitter, state, updatePanelContent
+    )
+  );
 }
