@@ -31,21 +31,21 @@ export function registerCommands(
 
   context.subscriptions.push(
 
-    //
+    // navigation commands
     registerGoToNextItemCommand(contentProvider),
     registerGoToPrevItemCommand(contentProvider),
     registerGoToItemByIndexCommand(contentProvider),
 
-    //
+    // command for opening a file in the cloned project repository
     registerOpenFileCommand(),
 
-    //
+    // commands for hint management
     registerShowInlineHintFromLensCommand(state.clickableHintLines),
     registerShowHintPopupCommand(contentProvider, () => state.currentPanel),
     registerShowSolutionCommand(contentProvider, codeFileProvider, () => state.tempFileCopyUri, () => state.activeFileUri),
     registerToggleHighlightCommand(contentProvider, () => state.tempFileCopyUri),
 
-    //
+    // command that loads a new section of the extension
     registerLineClickedCommand(
       context, contentProvider, codeFileProvider, contentTreeViewDisposable, state, updatePanelContent
     )

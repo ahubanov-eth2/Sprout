@@ -13,6 +13,12 @@ type HintInfo = {
   persistent_lenses: PersistentLens[];
 };
 
+/** 
+ * Listens for text edits in code files or docs that contain inline hint lenses.
+ * Removes lenses that are invalidated by edits, shifts remaining lenses
+ * to stay aligned with line changes, persists updated lens state, 
+ * and updates the active panel UI when needed. 
+ */ 
 export function registerPersistentLensListener(
   clickableHintLines: Map<string, HintInfo>,
   codeLensChangeEmitter: vscode.EventEmitter<void>,

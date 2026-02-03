@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
 
+// DEPRECATED/HAS NO RELEVANT EFFECT:
+// Mirrors edits made to a temporary file back onto itself
+// to keep VS Code change events and decorations in sync
+// with programmatic updates to the temp document.
 export function registerTempFileMirrorListener(
   getTempFileUri: () => vscode.Uri | undefined
 ): vscode.Disposable {
