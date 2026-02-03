@@ -3,7 +3,7 @@
   Sprout Source Code
 </h1>
 
-Welcome! This repository contains the source code for the Sprout VS Code extension, developed at PEACH Lab at ETH Zürich.
+Welcome! This repository contains the source code for the Sprout VS Code extension.
 
 ## Overview
 
@@ -41,7 +41,7 @@ based on an environment variable that is contained in the setup logic needed for
 ### Launching Sprout
 
 A Sprout workflow is intended to be completed within a GitHub Codespace and, therefore, Sprout can only be launched within a development container (i.e. a dev container).
-Each workflow configured in the Sprout Course Collection repository has an additional corresponding repository that can set up a dev container to launch Sprout. For example, this is the [corresponding repository for "course1"](https://github.com/ahubanov-eth2/sprout-user-mattermost). 
+Each workflow configured in the Sprout Course Collection repository has an additional corresponding repository that can set up a dev container to launch Sprout. For example, this is the [corresponding repository for "course1"](https://github.com/ahubanov-eth2/sprout-user-mattermost). There is a list of all available courses and their launch repos in the README of the [Sprout Course Collection](https://github.com/ahubanov-eth2/Sprout-Course-Collection) repository. 
 
 When launching this dev container, the `.devcontainer` file instructs that the container should clone the target OSS where the task is derived from and installs all necessary utilities to compile the target OSS at the commit when the GitHub issue was opened. It also configures the necessary environment variables and installs Sprout via the `.vsix` package.
 
@@ -66,5 +66,5 @@ If you're a developer and you would like to run a Sprout workflow locally, do th
 
 ## How to add a new course/workflow
 
-If you would like to create a new course/workflow, please follow the directions to do so in the README of the Sprout Course Collection repository.
+If you would like to create a new course/workflow, please follow the [directions](https://github.com/ahubanov-eth2/Sprout-Course-Collection?tab=readme-ov-file#for-course-creators) to do so in the README of the Sprout Course Collection repository.
 
