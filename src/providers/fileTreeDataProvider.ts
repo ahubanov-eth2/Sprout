@@ -2,6 +2,15 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * TreeDataProvider that manages the cloned project repository that is cloned into the task and in which the user solves the task
+ * It presents a filesystem directory where this repo is cloned as a navigable tree view.
+ *
+ * Functionalities:
+ * - Displays folders and files rooted at a configurable repository path.
+ * - Lazily reads the filesystem on expansion of the panel where it is contained.
+ * - Attaches the "open file" command to leaf nodes so the user can interact with files of this repo.
+ */
 export class FileTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;

@@ -3,6 +3,17 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 
+/**
+ * TreeDataProvider that is the authoritative in-memory tree model for the full course/task structure shown
+ * in the left-side task navigation view. A node in this tree is a "Section" object as defined towards the bottom.
+ *
+ * Functionalities:
+ * - Reads course metadata from YAML or JSON configuration files that come with each subfolder of a task folder.
+ * - Builds a hierarchical tree of Sections.
+ * - Supports navigation between task leaves (next / previous / siblings).
+ * - Provides lookup helpers to find tasks by label, which enables the navigation by clicking on the left sidebar.
+ *
+ */
 export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.TreeItem> {
   private taskRoot: Section | undefined;
 
