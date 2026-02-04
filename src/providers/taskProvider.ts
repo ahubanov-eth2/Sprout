@@ -21,15 +21,15 @@ export class TaskProvider implements vscode.TreeDataProvider<Section | vscode.Tr
   readonly onDidChangeTreeData: vscode.Event<Section | undefined | null | void> = this._onDidChangeTreeData.event;
 
   constructor(context: vscode.ExtensionContext) {
-    this.loadData();
+    this.loadData(context);
   }
 
-  private async loadData() {
+  private async loadData(context: vscode.ExtensionContext) {
 
     const courseName = process.env.SPROUT_COURSE_NAME || '';
 
     const coursePath = vscode.Uri.joinPath(
-      vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+      context.extensionUri,
       'data',
       'structured-courses', 
       courseName

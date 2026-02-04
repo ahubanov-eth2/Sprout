@@ -44,7 +44,7 @@ export function updatePanelContent(
   );
 
   panel.title = `${item.label}`;
-  panel.webview.html = getWebviewContent(item, siblings, currentIndex, parentLabel, panel.webview, fileProvider, state, checklistState); 
+  panel.webview.html = getWebviewContent(context, item, siblings, currentIndex, parentLabel, panel.webview, fileProvider, state, checklistState); 
 }
 
 export function registerWebviewMessageHandlers(
@@ -107,6 +107,7 @@ export function registerWebviewMessageHandlers(
 };
 
 function getWebviewContent(
+  context: vscode.ExtensionContext,
   item: any, 
   siblings: Section[], 
   currentIndex: number,
@@ -118,7 +119,7 @@ function getWebviewContent(
 ): string 
 {
     const mediaFolderUri = vscode.Uri.joinPath(
-      vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+      context.extensionUri,
       'media'
     );
 
@@ -126,7 +127,7 @@ function getWebviewContent(
     const image2Uri = webview.asWebviewUri(vscode.Uri.joinPath(mediaFolderUri, 'fixed.png'));
 
     const uri = vscode.Uri.joinPath(
-      vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+      context.extensionUri,
       'media',
       'rightPanelWebView.html'
     );
@@ -163,7 +164,7 @@ function getWebviewContent(
     {
       try {
           const fullTaskDescriptionFile = vscode.Uri.joinPath(
-            vscode.extensions.getExtension('ahubanov.sprout')!.extensionUri,
+            context.extensionUri,
             'data',
             'structured-courses',
             configData.taskDescriptionFile
