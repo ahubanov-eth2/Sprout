@@ -1,6 +1,5 @@
 <h1>
-  <!-- Image is commented out because of anonymity 
-  -->
+  <img src="logo-green-top.png" alt="Sprout Logo" width="70" height="60"> 
   Sprout Source Code
 </h1>
 
@@ -32,7 +31,7 @@ Upon activation in VS Code, Sprout's first action is to parse a specific set of 
 It looks for these files under the `data/structured-courses` path relative to its working directory. 
 If it does not find these files, or if they have an unexpected structure, it displays a blank screen in VS Code or it renders an incomplete UI.
 
-For the currently supported workflows/tasks, these files are stored in the accompanying Sprout Course Collection repository. Each "course" subfolder there contains all configuration files with all the needed content for a particular workflow/task. 
+For the currently supported workflows/tasks, these files are stored in the [Sprout Course Collection](https://github.com/ahubanov-eth2/Sprout-Course-Collection) repository. Each "course" subfolder there contains all configuration files with all the needed content for a particular workflow/task. 
 Please consult its README if you want to know more about the structure of these files. 
 
 The Sprout Course Collection repository is a git submodule of this repository under the `data/structured-courses` path
@@ -42,31 +41,30 @@ based on an environment variable that is contained in the setup logic needed for
 ### Launching Sprout
 
 A Sprout workflow is intended to be completed within a GitHub Codespace and, therefore, Sprout can only be launched within a development container (i.e. a dev container).
-Each workflow configured in the Sprout Course Collection repository has an additional corresponding repository that can set up a dev container to launch Sprout. There is a list of all available courses and their launch repos in the README of the Sprout Course Collection repository. (For purposes of anonymity, this list is currently removed.) 
+Each workflow configured in the Sprout Course Collection repository has an additional corresponding repository that can set up a dev container to launch Sprout. For example, this is the [corresponding repository for "course1"](https://github.com/ahubanov-eth2/sprout-user-mattermost). There is a list of all available courses and their launch repos in the README of the [Sprout Course Collection](https://github.com/ahubanov-eth2/Sprout-Course-Collection) repository. 
 
 When launching this dev container, the `.devcontainer` file instructs that the container should clone the target OSS where the task is derived from and installs all necessary utilities to compile the target OSS at the commit when the GitHub issue was opened. It also configures the necessary environment variables and installs Sprout via the `.vsix` package.
 
 Each course needs its own such dev container setup repository because the workflow is intended to run in a GitHub Codespace and, to avoid long set-up times, the Codespace needs to be pre-built. At the time of writing, GitHub allows pre-building only of the top-most `.devcontainer` configuration in a given repository.
 
-<!-- The image shows the launch process in steps. -->
+The image shows the launch process in steps.
 
-<!-- Image is commented out because specifying a repository in package.json 
-     is needed for the image to be found but specifying a repository in package.json will violate anonymity --> 
+![launch procedure](launch-procedure.png)
 
 ## How to run a Sprout workflow from a user's perspective
 
-To run a Sprout workflow, go to the Sprout Course Collection repository, select a course you like, open its subfolder and go through its README. Towards the bottom of the README, you should see a button "Open in GitHub Codespaces". This will launch Sprout for your desired workflow in a GitHub Codespace.
+To run a Sprout workflow, go to the [Sprout Course Collection](https://github.com/ahubanov-eth2/Sprout-Course-Collection) repository, select a course you like, open its subfolder and go through its README. Towards the bottom of the README, you should see a button "Open in GitHub Codespaces". This will launch Sprout for your desired workflow in a GitHub Codespace.
 
 ## How to run a Sprout workflow from a developer's perspective
 
 If you're a developer and you would like to run a Sprout workflow locally, do the following:
 
 1. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-2. Clone and open locally the devcontainer configuration repo of your desired Sprout workflow.
+2. Clone and open locally the devcontainer configuration repo of your desired Sprout workflow (e.g. if you want course1, clone [this](https://github.com/ahubanov-eth2/sprout-user-mattermost))
 3. Delete its old `.vsix` file and replace it with your newly packaged `.vsix` file. (To produce a new `.vsix`, you can do `npx vsce package`.)
 4. Open the repo in a Dev Container using the Dev Containers extension.
 
 ## How to add a new course/workflow
 
-If you would like to create a new course/workflow, please follow the directions to do so in the README of the Sprout Course Collection repository.
+If you would like to create a new course/workflow, please follow the [directions](https://github.com/ahubanov-eth2/Sprout-Course-Collection?tab=readme-ov-file#for-course-creators) to do so in the README of the Sprout Course Collection repository.
 
